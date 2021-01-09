@@ -6,29 +6,33 @@
 rm(list=ls())
 
 library(tidyverse)
+library(measurements)
 
 load("./Build/Output/corechar.RData")
 
-#Generate and Decode Characteristics Data
+#Generate and Decode Characteristics Data####
 
-  #subset out for the time non-variable charcteristics
+  #subset out for the time non-variable characteristics
 
     data<-core.char[,c("ID","cntry_birth","hgc_mother","hgc_father","race","sex")]
-      #Remove missing vlaues
+      #Remove missing values
       data<-data[which(data$sex>0),]
       data<-data[which(data$race>0),]
       data<-data[which(data$cntry_birth>0),]
     data<-unique(data)
     
     #create Characteristics Dummies
-      data$male<-ifelse(data$sex==1,1,0)
-      data$hispan<-ifelse(data$race>14 & data$race<22,1,0) 
-      data$black<-ifelse(data$race==1,1,0)
-      data$asian<-ifelse(data$race==2 | data$race==4 | data$race==8 | 
+      data$MALE<-ifelse(data$sex==1,1,0)
+      data$FEMALE<-ifelse(data$MALE==1,0,1)
+      data$HISPAN<-ifelse(data$race>14 & data$race<22,1,0) 
+      data$BLACK<-ifelse(data$race==1,1,0)
+      data$ASIAN<-ifelse(data$race==2 | data$race==4 | data$race==8 | 
                                 data$race==13 | data$race==14 | data$race==26 |
                                 data$race==10, 1, 0)
-      data$white<-ifelse(data$black==0 & data$asian==0 & data$hispan==0 ,1 ,0)
-      data$bornus<-ifelse(data$cntry_birth==1,1,0)
+      data$NATAM<-ifelse(data$race==9,1,0)
+      data$white<-ifelse(data$BLACK==0 & data$ASIAN==0 & data$HISPAN==0 & 
+                           data$NATAM==0,1 ,0)
+      data$born_us<-ifelse(data$cntry_birth==1,1,0)
       data$hgc_father[which(data$hgc_father<0)]<-NA
       data$hgc_mother[which(data$hgc_mother<0)]<-NA
     #Remove excess
@@ -40,20 +44,24 @@ load("./Build/Output/corechar.RData")
   
   char.1<-merge(char.1,test,by="ID",all.x=TRUE)
   
+    char.1$AFQT_1[which(char.1$AFQT_1<0)]<-NA
+    char.1$AFQT_2[which(char.1$AFQT_2<0)]<-NA
+    char.1$AFQT_3[which(char.1$AFQT_3<0)]<-NA
+  
   rm(data,test)
   
-  #Create time varying variables
+#Create time varying variables####
     
-    #Marrage
-      core.char$marrage<-ifelse(core.char$martial==1,"Married",
+    #Marriage
+      core.char$marriage<-ifelse(core.char$martial==1,"Married",
                                 ifelse(core.char$martial==5, "Married",
                                 ifelse(core.char$martial==0, "Nev Married",
                                 ifelse(core.char$martial==2, "Seperated",
                                 ifelse(core.char$martial==3, "Divorced",
                                 ifelse(core.char$martial==6, "Widowed","Missing"))))))
-      core.char$marrage[is.na(core.char$marrage)]<-"Missing"
+      core.char$marriage[is.na(core.char$marriage)]<-"Missing"
       
-    #Enrollmnet
+    #Enrollment
       core.char$enrollment<-ifelse(core.char$enroll==1,"Not Enrolled",
                               ifelse(core.char$enroll==2, "HS Enrolled",
                                 ifelse(core.char$enroll==3, "Col Enrolled",
@@ -66,47 +74,159 @@ load("./Build/Output/corechar.RData")
                                     ifelse(core.char$smsa==2, "SMSA CCNK",
                                            ifelse(core.char$smsa==3, "SMSA CC", "Missing"))))
       core.char$SMSA[is.na(core.char$SMSA)]<-"Missing"
-
+      
+      core.char$temp<-core.char$region
+      core.char$region<-ifelse(core.char$temp==1,"Northeast",
+                               ifelse(core.char$temp==2, "North Central",
+                                      ifelse(core.char$temp==3, "South",
+                                             ifelse(core.char$temp==4, "West","Missing"))))
+      core.char$region[is.na(core.char$temp)]<-NA
+      core.char$temp<-NULL
+      
 		#Current Age
-      core.char$age<-core.char$year-as.numeric(format(core.char$bday,'%Y')) #Current Age
+      core.char$AGE<-core.char$year-as.numeric(format(core.char$bday,'%Y')) #Current Age
       
+   #Family and Income
+      core.char$famsize[which(core.char$famsize<0)]<-NA
+        names(core.char)[which(names(core.char)=="famsize")]<-"FAMSIZE"   
+        
+      core.char$CHILD7<-ifelse(core.char$youngest<8,1,0)
+        core.char$CHILD7[is.na(core.char$youngest)]<-NA
       
+      core.char$pinc[which(core.char$pinc<0)]<-NA
+        names(core.char)[which(names(core.char)=="pinc")]<-"WAGE"
       
+      core.char$fampov[which(core.char$fampov<0)]<-NA
+        names(core.char)[which(names(core.char)=="fampov")]<-"FAMPOV"
+      
+      core.char$income[which(core.char$income<0)]<-NA
+        names(core.char)[which(names(core.char)=="income")]<-"OTHINC"
+        
+    #Search Variables
+        core.char$smeth1[which(core.char$smeth1<0)]<-NA
+          core.char$SEARCH_ST<-ifelse(core.char$smeth1==2,1,0)
+        core.char$smeth2[which(core.char$smeth2<0)]<-NA
+          core.char$SEARCH_PRV<-ifelse(core.char$smeth2==3,1,0)
+        core.char$smeth3[which(core.char$smeth3<0)]<-NA
+          core.char$SEARCH_EMP<-ifelse(core.char$smeth3==4,1,0)
+        core.char$smeth4[which(core.char$smeth4<0)]<-NA
+          core.char$SEARCH_FRD<-ifelse(core.char$smeth4==5,1,0)
+        core.char$smeth5[which(core.char$smeth5<0)]<-NA
+          core.char$SEARCH_ADS<-ifelse(core.char$smeth5==6,1,0)
+        core.char$smeth6[which(core.char$smeth6<0)]<-NA
+          core.char$SEARCH_NEWS<-ifelse(core.char$smeth6==7,1,0)
+        core.char$smeth7[which(core.char$smeth7<0)]<-NA
+          core.char$SEARCH_SCHS<-ifelse(core.char$smeth7==8,1,0)
+        core.char$smeth8[which(core.char$smeth8<0)]<-NA
+          core.char$SEARCH_OTH<-ifelse(core.char$smeth8==9,1,0)
+          
+        core.char$searchft[which(core.char$searchft<0)]<-NA
+          core.char$SEARCH_FT<-ifelse(core.char$searchft==1,1,0)
+          core.char$SEARCH_PT<-ifelse(core.char$searchft==2,1,0)
+        core.char$searchft<-NULL
 
-	/// Generate Height and Weight Data
+    #Limitations Variables
+        core.char$limkind[which(core.char$limkind<0)]<-NA
+        core.char$limkind[which(core.char$limkind==2)]<-0
+          names(core.char)[which(names(core.char)=="limkind")]<-"LIMKIND"   
+        core.char$limamt[which(core.char$limamt<0)]<-NA
+        core.char$limamt[which(core.char$limamt==2)]<-0
+          names(core.char)[which(names(core.char)=="limamt")]<-"LIMAMT"  
+        
+    #Create subset with these variables
+      
+      char.2<-core.char[,c("ID","FAMSIZE","CHILD7","WAGE","FAMPOV","OTHINC","SMSA",
+                           "enrollment","marriage","region","year","SEARCH_FT","SEARCH_PT",
+                           "SEARCH_ST","SEARCH_PRV","SEARCH_EMP","SEARCH_FRD","SEARCH_ADS",
+                           "SEARCH_NEWS","SEARCH_SCHS","SEARCH_OTH","AGE","LIMKIND","LIMAMT")]
+      
+#Create Height, Weight and BMI####
+      temp<-core.char[,c("ID","weight","height","year")]
+        #re-code the height which is sometimes in all inches and other in feet-inches
+        temp$feet<-ifelse(temp$height>100,substr(temp$height,1,1),trunc(temp$height/12,0))
+        temp$inch<-ifelse(temp$height>100,as.numeric(substr(temp$height,2,nchar(temp$height))),
+                          temp$height-trunc(temp$height/12,0)*12)
+        temp$height<-12*as.numeric(temp$feet)+as.numeric(temp$inch)
+        temp$height[which(temp$height<0)]<-NA
+            c<-temp %>%
+              group_by(ID) %>%
+              summarize(md=max(height,na.rm=TRUE))
+            
+            c$md[is.infinite(c$md)]<-NA
+            c<-unique(c)
+            names(c)<-c("ID","max_height")
+        temp<-merge(temp,c,by="ID",all.x=TRUE)
+          rm(c)
+          
+        #Interpolate the missing weights
+          temp$weight[which(temp$weight<0)]<-NA
+          
+          a<-temp %>%
+              group_by(ID) %>%
+                  mutate(test=quantile(weight,.85,na.rm=TRUE))
+          temp$weight[which(a$weight>a$test)]<-NA
+           rm(a) 
+            
+          b<-temp %>%
+            group_by(ID) %>% 
+                summarise(weight2=round(mean(weight,na.rm=TRUE)))
+          
+          b<-b[!is.nan(b$weight2),]
+          
+          c<-temp %>%
+              group_by(ID) %>%
+                mutate(num=sum(!is.na(weight)))
+          
+            c<-c[,c("ID","num")]
+            c<-unique(c)
+            c<-c[which(c$num>2),]
+          d<-merge(temp,c,by="ID",all.y=TRUE)
+          
+          e<-d %>%
+              group_by(ID) %>%
+                arrange(ID, year) %>%
+                  mutate(time=seq(1,n())) %>%
+                    mutate(weight3=round(approx(time,weight, n=n())$y),2) %>%
+                      select(c(ID,weight3,year))
+          
+          f<-merge(b,e,by="ID",all=TRUE)
+  
 
-	drop if weight_`x'==.a  /*Removing missing data*/
-        if `x'==1981{ 
-			tostring height_1981,replace
-			gen feet=substr(height_1981,1,1)
-			gen inch=substr(height_1981,2,2)
-			replace feet="0" if feet=="-"
-			destring feet,replace
-			destring inch,replace
-			drop height_1981
-			gen height_1981=(feet*12)+inch
-		}
-		if height_`x'==.{
-		  drop height_`x'
-			joinby id using height.dta,unm(m)
-			drop _merge
-			ren height_1985 height_`x'
-		}
+          temp<-merge(temp,f,by=c("ID","year"),all=TRUE)
+            rm(a,b,c,d,e,f)
+        
+      #Convert to metrics for BMI calculations
+          temp$weight<-conv_unit(temp$weight,"lbs","kg")
+          temp$weight2<-conv_unit(temp$weight2,"lbs","kg")
+          temp$weight3<-conv_unit(temp$weight3,"lbs","kg")
+          temp$height<-conv_unit(temp$height,"inch","m")
+          temp$max_height<-conv_unit(temp$max_height,"inch","m")
+          
+      #Calculate BMI
+          temp$BMI_1<-temp$weight/((temp$max_height)^2)
+          temp$BMI_2<-temp$weight2/((temp$max_height)^2)
+          temp$BMI_3<-temp$weight3/((temp$max_height)^2)
       
-      /// Marital, Family and Resident Status
-      
-      gen married=1 if marit_status_1_`x'==2
-		replace married=0 if married==.
-	gen marr_oth=1 if marit_status_1_`x'==3	
-      replace marr_oth=0 if marr_oth==.
-      drop if marit_status_1_`x'==-1 | marit_status_1_`x'==-2 | marit_status_1_`x'==-3
-      drop if  fam_size_`x'==-1 |  fam_size_`x'==-2 |  fam_size_`x'==-3
-      drop if  curr_region_`x'==-1 |  curr_region_`x'==-2 |  curr_region_`x'==-3 |  curr_region_`x'==-5
-	ta curr_region_`x',gen(region_`x')
-	replace born_us=0 if born_us==2
-		drop if born_us==-3
-		lab var born_us "Born in the U.S."
-		lab var married "Married as of `x'"
-		lab var marr_oth "Seperated, Divorsed or Widowed as of `x'"
-	
-	/// Income and Poverty
+      #subset Data
+        char.3<-temp %>%
+                  select(-c("feet","inch"))
+        char.3<-char.3[!is.na(char.3$year),]
+        char.3$BMI_Level1<-ifelse(char.3$BMI_1>29.9,"Obese",
+                                  ifelse(char.3$BMI_1>24.9 & char.3$BMI_1<30, "Overweight",
+                                         ifelse(char.3$BMI_1>18.49 & char.3$BMI_1<25, "Normal","Underweight")))
+        char.3$BMI_Level2<-ifelse(char.3$BMI_2>29.9,"Obese",
+                                  ifelse(char.3$BMI_2>24.9 & char.3$BMI_2<30, "Overweight",
+                                         ifelse(char.3$BMI_2>18.49 & char.3$BMI_2<25, "Normal","Underweight")))
+        char.3$BMI_Level3<-ifelse(char.3$BMI_3>29.9,"Obese",
+                                  ifelse(char.3$BMI_3>24.9 & char.3$BMI_3<30, "Overweight",
+                                         ifelse(char.3$BMI_3>18.49 & char.3$BMI_3<25, "Normal","Underweight")))
+        rm(temp)
+
+#Create final characteristic data for analysis ######
+    core<-merge(char.2,char.3,by=c("ID","year"))
+    core<-merge(char.1,core,by="ID",all.y=TRUE)
+    
+    core<-core %>%
+      group_by(ID) %>%
+        arrange(year, .by_group=TRUE)
+  save(core,file="./Build/Output/core.RData")     
