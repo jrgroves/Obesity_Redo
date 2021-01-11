@@ -90,13 +90,20 @@ gaps <- function(x) {
   return(out)
 }
 
+
 corr<-read.csv("./Build/Input/correction.csv", header=TRUE, as.is=TRUE)
    names(corr)<-gsub("R","r",names(corr))
+gaps2<-read.csv("./Build/Input/GAPS.csv", as.is=TRUE, header=TRUE)
+  names(gaps2)<-gsub("R","r",names(gaps2))
    
 #1980 Unemployment Gaps####
 data<-read.dta("./Build/Input/nls1980.dta")
   data<-merge(data,corr,by="r0000100",all.x=TRUE)
   names(data)<-gsub(".x","",names(data))
+  names(data)<-gsub(".y","z",names(data))
+  
+  data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+    names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r0332700","r0332710","r0332720","r0333200","r0333210","r0333220","r0333221","r0333300",
             "r0338300","r0338400","r0338500","r0344200","r0344210","r0344220","r0344700","r0344710","r0344720",
@@ -108,7 +115,9 @@ elements<-c("r0000100","r0332700","r0332710","r0332720","r0333200","r0333210","r
             "r0362200","r0373700","r0385200")
 
 data<-data %>%
-      select(elements) %>%
+      select(elements) 
+
+%>%
         gaps()
 data$year<-1980
   core.gap<-data
@@ -116,8 +125,12 @@ data$year<-1980
 #1981 unemployment gaps####
   
 data<-read.dta("./Build/Input/nls1981.dta")
-data<-merge(data,corr,by="r0000100",all.x=TRUE)
-names(data)<-gsub(".x","",names(data))
+  data<-merge(data,corr,by="r0000100",all.x=TRUE)
+  names(data)<-gsub(".x","",names(data))
+  names(data)<-gsub(".y","z",names(data))
+  
+  data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+  names(data)<-gsub(".y","",names(data))
 
 data$r0578600<-15 #Day of leaving job 4 is missing
 
@@ -143,6 +156,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1982.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
+
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r0833200","r0833300","r0833400","r0833600","r0833700","r0833800","r0833810","r0833900",
             "r0840500","r0840600","r0840700","r0846300","r0846400","r0846500","r0846700","r0846800","r0846900",
@@ -165,6 +182,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1983.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
+
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r1080400","r1080500","r1080600","r1080800","r1080900","r1081000","r1081010","r1081100",
             "r1087700","r1087800","r1087900","r1093600","r1093700","r1093800","r1094000","r1094100","r1094200",
@@ -187,6 +208,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1984.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
+
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r1456100","r1456200","r1456300","r1456500","r1456600","r1456700","r1456710","r1456800",
             "r1463400","r1463500","r1463600","r1469200","r1469300","r1469400","r1469600","r1469700","r1469800",
@@ -209,6 +234,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1985.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
+
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r1802900","r1803000","r1803100","r1803300","r1803400","r1803500","r1803510","r1803600",
             "r1810200","r1810300","r1810400","r1815600","r1815700","r1815800","r1816000","r1816100","r1816200",
@@ -231,6 +260,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1986.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
+
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r2164500","r2164600","r2164700","r2164900","r2165000","r2165100","r2165110","r2165200",
             "r2171900","r2172000","r2172100","r2178100","r2178200","r2178300","r2178500","r2178600","r2178700",
@@ -253,6 +286,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1987.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
+
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r2371900","r2372000","r2372100","r2372300","r2372400","r2372500","r2372510","r2372600",
             "r2376700","r2376800","r2376900","r2383200","r2383300","r2383400","r2383600","r2383700","r2383800",
@@ -275,6 +312,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1988.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
+
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r2762800","r2762900","r2763000","r2763200","r2763300","r2763400","r2763410","r2763500",
             "r2771500","r2771600","r2771700","r2775700","r2775800","r2775900","r2776100","r2776200","r2776300",
@@ -297,6 +338,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1989.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
+
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r3004600","r3004700","r3004800","r3005000","r3005100","r3005200","r3005210","r3005300",
             "r3013300","r3013400","r3013500","r3017700","r3017800","r3017900","r3018100","r3018200","r3018300",
@@ -319,6 +364,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1990.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
+
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r3332000","r3332100","r3332200","r3332400","r3332500","r3332600","r3332610","r3332700",
             "r3340700","r3340800","r3340900","r3346000","r3346100","r3346200","r3346400","r3346500","r3346600",
@@ -341,7 +390,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1991.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
 
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 elements<-c("r0000100","r3597000","r3597100","r3597200","r3597400","r3597500","r3597600","r3597610","r3597700",
             "r3605000","r3605100","r3605200","r3609100","r3609200","r3609300","r3609500","r3609600","r3609700",
             "r3609710","r3609800","r3617100","r3617200","r3617300","r3621200","r3621300","r3621400","r3621600",
@@ -363,6 +415,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1992.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
+
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r3947100","r3947200","r3947300","r3947500","r3947600","r3947700","r3947800","r3947900",
             "r3955200","r3955300","r3955400","r3959300","r3959400","r3959500","r3959700","r3959800","r3959900",
@@ -385,6 +441,10 @@ core.gap<-rbind(core.gap,data)
 data<-read.dta("./Build/Input/nls1993.dta")
 data<-merge(data,corr,by="r0000100",all.x=TRUE)
 names(data)<-gsub(".x","",names(data))
+names(data)<-gsub(".y","z",names(data))
+
+data<-merge(data,gaps2,by="r0000100",all.x=TRUE)
+names(data)<-gsub(".y","",names(data))
 
 elements<-c("r0000100","r4187800","r4187801","r4187802","r4440300","r4440301","r4440302","r4416300","r4188000",
             "r4193700","r4193800","r4193900","r4200700","r4200701","r4200702","r4201200","r4201201","r4201202",
