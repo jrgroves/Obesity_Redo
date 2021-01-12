@@ -115,9 +115,7 @@ elements<-c("r0000100","r0332700","r0332710","r0332720","r0333200","r0333210","r
             "r0362200","r0373700","r0385200")
 
 data<-data %>%
-      select(elements) 
-
-%>%
+      select(elements) %>%
         gaps()
 data$year<-1980
   core.gap<-data
