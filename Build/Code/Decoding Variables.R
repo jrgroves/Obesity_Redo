@@ -63,9 +63,9 @@ load("./Build/Output/corechar.RData")
       
     #Enrollment
       core.char$enrollment<-ifelse(core.char$enroll==1,"Not Enrolled",
-                              ifelse(core.char$enroll==2, "HS Enrolled",
-                                ifelse(core.char$enroll==3, "Col Enrolled",
-                                  ifelse(core.char$enroll==4, "Graduated","Missing"))))
+                              ifelse(core.char$enroll==2, "HS",
+                                ifelse(core.char$enroll==3, "HS PLUS",
+                                  ifelse(core.char$enroll==4, "COLLEGE","Missing"))))
       core.char$enrollment[is.na(core.char$enrollment)]<-"Missing"
     
     #Regional
@@ -105,20 +105,28 @@ load("./Build/Output/corechar.RData")
     #Search Variables
         core.char$smeth1[which(core.char$smeth1<0)]<-NA
           core.char$SEARCH_ST<-ifelse(core.char$smeth1==2,1,0)
+          core.char$SEARCH_ST[is.na(core.char$SEARCH_ST)]<-0
         core.char$smeth2[which(core.char$smeth2<0)]<-NA
           core.char$SEARCH_PRV<-ifelse(core.char$smeth2==3,1,0)
+          core.char$SEARCH_PRV[is.na(core.char$SEARCH_PRV)]<-0
         core.char$smeth3[which(core.char$smeth3<0)]<-NA
           core.char$SEARCH_EMP<-ifelse(core.char$smeth3==4,1,0)
+          core.char$SEARCH_EMP[is.na(core.char$SEARCH_EMP)]<-0
         core.char$smeth4[which(core.char$smeth4<0)]<-NA
           core.char$SEARCH_FRD<-ifelse(core.char$smeth4==5,1,0)
+          core.char$SEARCH_FRD[is.na(core.char$SEARCH_FRD)]<-0
         core.char$smeth5[which(core.char$smeth5<0)]<-NA
           core.char$SEARCH_ADS<-ifelse(core.char$smeth5==6,1,0)
+          core.char$SEARCH_ADS[is.na(core.char$SEARCH_ADS)]<-0
         core.char$smeth6[which(core.char$smeth6<0)]<-NA
           core.char$SEARCH_NEWS<-ifelse(core.char$smeth6==7,1,0)
+          core.char$SEARCH_NEWS[is.na(core.char$SEARCH_NEWS)]<-0
         core.char$smeth7[which(core.char$smeth7<0)]<-NA
           core.char$SEARCH_SCHS<-ifelse(core.char$smeth7==8,1,0)
+          core.char$SEARCH_SCHS[is.na(core.char$SEARCH_SCHS)]<-0
         core.char$smeth8[which(core.char$smeth8<0)]<-NA
           core.char$SEARCH_OTH<-ifelse(core.char$smeth8==9,1,0)
+          core.char$SEARCH_OTH[is.na(core.char$SEARCH_OTH)]<-0
           
         core.char$searchft[which(core.char$searchft<0)]<-NA
           core.char$SEARCH_FT<-ifelse(core.char$searchft==1,1,0)
@@ -229,4 +237,5 @@ load("./Build/Output/corechar.RData")
     core<-core %>%
       group_by(ID) %>%
         arrange(year, .by_group=TRUE)
-  save(core,file="./Build/Output/core.RData")     
+  char.core<-core
+  save(char.core,file="./Build/Output/core.RData")     

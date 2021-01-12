@@ -24,6 +24,7 @@ core$gap<-as.numeric(core$gap) #Convert 'days' to numeric value
 
 core<-core %>%
     subset(gap<=365)
+core$censor<-ifelse(core$gap==365,0,1) #1 Indicates the end of spell was observed
 
 
 #Create Occupation and Type Variables
@@ -52,7 +53,7 @@ core<-core %>%
                                                       ifelse(core$occ>900 & core$occ<966, "Service",
                                                       ifelse(core$occ>979 & core$occ<996, "Private","OTHER"))))))))))))
   
-#Decode the Reason for Seperation
+#Decode the Reason for Separation
   
   core$FORCED<-ifelse(core$reason==2 & core$year<1984 | core$reason==4 & core$year>1983, 1, 0)
   
@@ -63,5 +64,12 @@ core<-core %>%
   core$TEMP<-ifelse(core$reason==3 & core$year>1983, 1, 0)
   core$LAYOFF<-ifelse(core$reason==1,1,0)
   core$SEP_OTH<-ifelse(core$FORCED==0 & core$END==0 & core$TEMP==0 & core$LAYOFF==0,1,0)
+  
+  names(core)[which(names(core)=="gap")]<-"SPELL"
+  names(core)[which(names(core)=="ten")]<-"TENURE"
+  
+gap.core<-core %>%
+      select(ID,SPELL,TENURE,IND,OCC,FORCED,END,TEMP,LAYOFF,SEP_OTH,rate,censor,year)
+save(gap.core, file="./Build/Output/gapcore.RData")
   
   
