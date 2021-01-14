@@ -27,10 +27,12 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
                     subset(!is.na(LIMKIND)) %>%
                         subset(!is.na(OTHINC))
   #Create additional variables
+    
+    
     core$BMI_Level4<-ifelse(core$BMI_Level3=="Normal" | core$BMI_Level3=="Overweight",
-                            "Normal","Obese")
+                            "Normal",core$BMI_Level3)
     core$BMI_Level5<-ifelse(core$BMI_Level3=="Normal" | core$BMI_Level3=="Underweight",
-                            "Normal","Obese")
+                           "Normal","Obese")
     
     core$SEX<-ifelse(core$FEMALE==1,"Female","Male")
     
@@ -40,6 +42,11 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
     core<-mutate(core, dummy_cols(BMI_Level4))
 
     names(core)<-gsub(".data_","",names(core))
+    
+    core<-core %>%
+      replace(is.na(.), 0) %>%
+              mutate(SEARCH_CT = rowSums(.[31:38]))
+
   #Removed unused variables from data core
     
     core.old<-core
@@ -48,8 +55,8 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
           select("ID","SPELL","Normal","Obese","AGE","MARRIED","CHILD7","HS DIP",
                  "SOME COLLEGE","COLLEGE PLUS",
                   "AFQT_1","WAGE","OTHINC","BLACK","ASIAN","HISPAN","NATAM","TENURE","LIMKIND",
-                  "LIMAMT","FORCED","END","TEMP","SEARCH_ST","SEARCH_PRV","SEARCH_EMP","SEARCH_FRD",
-                  "SEARCH_ADS","SEARCH_NEWS","SEARCH_SCHS","SEARCH_OTH","year","IND","OCC","censor",
+                  "LIMAMT","URATE","FORCED","END","TEMP","SEARCH_CT","SEARCH_ST","SEARCH_PRV","SEARCH_EMP","SEARCH_FRD",
+                  "SEARCH_ADS","SEARCH_NEWS","SEARCH_SCHS","SEARCH_OTH","year","IND","OCC","ended",
                   "BMI_2","BMI_3","BMI_Level2","BMI_Level3","BMI_Level4","BMI_Level5","MALE","FEMALE","SEX",
                   "NORTH CENT","NORTHEAST","SOUTH","WEST",)
     
@@ -73,9 +80,9 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
     
 
     #Translate gaps to Survival Data
-km<-with(core,Surv(SPELL, censor))
-km.m<-with(core.m,Surv(SPELL,censor))
-km.f<-with(core.f,Surv(SPELL,censor))
+km<-with(core,Surv(SPELL, ended))
+km.m<-with(core.m,Surv(SPELL,ended))
+km.f<-with(core.f,Surv(SPELL,ended))
 
 
 
@@ -83,8 +90,10 @@ km_fit1<-survfit(km~factor(BMI_Level4),data=core)
 autoplot(km_fit1)
 
 
-          
-km_fit2<-survfit(km~factor(BMI_Level4),data=core)
+km_fit2<-survfit(km.f~factor(BMI_Level4),data=core.f)
+autoplot(km_fit2)
+
+km_fit2<-survfit(km.m~factor(BMI_Level4),data=core.m)
 autoplot(km_fit2)
 
 km_fit3<-survfit(km~factor(BMI_Level4)+factor(SEX),data=core)

@@ -24,13 +24,13 @@ char<-read.csv(file="./Build/Input/default.csv", as.is=TRUE, header=TRUE )
 #1980 Characteristics Data####
 data<-read.dta("./Build/Input/nls1980.dta")
   data<-merge(data,seek,by="r0000100")
-  names(data)<-gsub(".y","",names(data))
+  names(data)<-gsub(".x","",names(data))
   
 elements<-c("r0000100","r0000300","r0000500","r0000700","r0006500","r0007900","r0009600","r0214800","r0220200",
             "r0407602","r0406501","r0406401","r0389900","r0393520","r0393510","r0405601","r0389000","r0326800",
             "r0405700","r0406010","r0393540","r0406100","r0405210","r0312300",
-            "r0298900","r0299000","r0269800","r0268300","r0268400","r0268500",
-            "r0268600","r0268700","r0268800","r0268900","r0269000")
+            "r0298900","r0299000","r0269800","r0268300","r0268400","r0268500","r0268600",
+            "r0268700","r0268800","r0268900","r0269000")
 
 vnam<-c("ID","bmon","byear","cntry_birth","hgc_mother","hgc_father","race","sex","age",
         "youngest","enroll","hgc_self","degree","smsa","urban","martial","children","num_dep",
@@ -41,8 +41,9 @@ vnam<-c("ID","bmon","byear","cntry_birth","hgc_mother","hgc_father","race","sex"
 data<-data %>%
         select(elements) %>%
           rename_with(~vnam)
-  
-  #Fill in missing variables
+
+
+#Fill in missing variables
       data$height<-NA
       data$weight<-NA
       

@@ -8,86 +8,127 @@ rm(list=ls())
 library(tidyverse)
 library(foreign)
 
-gaps <- function(x) {
-  j1s<-as.Date(paste(x[,2],x[,3],x[,4],sep="-"), "%m-%d-%y")
-  j1e<-as.Date(paste(x[,5],x[,6],x[,7],sep="-"), "%m-%d-%y")
-  j1ten<-x[,8]
-  j1r<-x[,9]
-  j1o<-x[,10]
-  j1t<-x[,11]
-  j1c<-x[,12]
-  j1hr<-x[,57]
-  j1cb<-x[,62]
 
-  j2s<-as.Date(paste(x[,13],x[,14],x[,15],sep="-"), "%m-%d-%y")
-  j2e<-as.Date(paste(x[,16],x[,17],x[,18],sep="-"), "%m-%d-%y")
-  j2ten<-x[,19]
-  j2r<-x[,20]
-  j2o<-x[,21]
-  j2t<-x[,22]
-  j2c<-x[,23]
-  j2hr<-x[,58]
-  j2cb<-x[,63]
-  
-  j3s<-as.Date(paste(x[,24],x[,25],x[,26],sep="-"), "%m-%d-%y")
-  j3e<-as.Date(paste(x[,27],x[,28],x[,29],sep="-"), "%m-%d-%y")
-  j3ten<-x[,30]
-  j3r<-x[,31]
-  j3o<-x[,32]
-  j3t<-x[,33]
-  j3c<-x[,34]
-  j3hr<-x[,59]
-  j3cb<-x[,64]
-  
-  j4s<-as.Date(paste(x[,35],x[,36],x[,37],sep="-"), "%m-%d-%y")
-  j4e<-as.Date(paste(x[,38],x[,39],x[,40],sep="-"), "%m-%d-%y")
-  j4ten<-x[,41]
-  j4r<-x[,42]
-  j4o<-x[,43]
-  j4t<-x[,44]
-  j4c<-x[,45]
-  j4hr<-x[,60]
-  j4cb<-x[,65]
-  
-  j5s<-as.Date(paste(x[,46],x[,47],x[,48],sep="-"), "%m-%d-%y")
-  j5e<-as.Date(paste(x[,49],x[,50],x[,51],sep="-"), "%m-%d-%y")
-  j5ten<-x[,52]
-  j5r<-x[,53]
-  j5o<-x[,54]
-  j5t<-x[,55]
-  j5c<-x[,56]
-  j5hr<-x[,61]
-  j5cb<-x[,66]
+
+
+clean<-function(x){
+    a<-x %>%
+      gather(job,var,j1:j5)
+    
+    a$job<-gsub("j","",a$job)
+    a<-a %>%
+      arrange(ID,desc(job))
+    return(a)
+}
+
+gaps <- function(x) {
   
   ID<-x[,1]
   
-  temp<-data.frame(ID,j1s,j1e,j1ten,j1r,j1o,j1t,j1c,j1hr,j1cb,
-                   j2s,j2e,j2ten,j2r,j2o,j2t,j2c,j2hr,j2cb,j3s,j3e,j3ten,j3r,j3o,j3t,j3c,j3hr,j3cb,
-                   j4s,j4e,j4ten,j4r,j4o,j4t,j4c,j4hr,j4cb,j5s,j5e,j5ten,j5r,j5o,j5t,j5c,j5hr,j5cb)
+  #Start Date
+  j1<-as.Date(paste(x[,2],x[,3],x[,4],sep="-"), "%m-%d-%y")
+  j2<-as.Date(paste(x[,13],x[,14],x[,15],sep="-"), "%m-%d-%y")
+  j3<-as.Date(paste(x[,24],x[,25],x[,26],sep="-"), "%m-%d-%y")
+  j4<-as.Date(paste(x[,35],x[,36],x[,37],sep="-"), "%m-%d-%y")
+  j5<-as.Date(paste(x[,46],x[,47],x[,48],sep="-"), "%m-%d-%y")
   
-  temp$gap5<-temp$j4s-temp$j5e
-  temp$gap4<-temp$j3s-temp$j4e
-  temp$gap3<-temp$j2s-temp$j3e
-  temp$gap2<-temp$j1s-temp$j2e
-
+  df<-data.frame(ID,j1,j2,j3,j4,j5)
+  df1<-clean(df)
+    names(df1)[3]<-"start"
   
-  df1<-subset(temp,select=c(ID,gap5,j5ten:j5cb))
-    df1<-df1[!is.na(df1$gap5),]
-    names(df1)<-c("ID","gap","ten","reason","occ","type","class","rate","union")
-  df2<-subset(temp,select=c(ID,gap4,j4ten:j4cb))
-    df2<-df2[!is.na(df2$gap4),]
-    names(df2)<-c("ID","gap","ten","reason","occ","type","class","rate","union")
-  df3<-subset(temp,select=c(ID,gap3,j3ten:j3cb))
-    df3<-df3[!is.na(df3$gap3),]
-    names(df3)<-c("ID","gap","ten","reason","occ","type","class","rate","union")
-  df4<-subset(temp,select=c(ID,gap2,j2ten:j2cb))
-    df4<-df4[!is.na(df4$gap2),]
-    names(df4)<-c("ID","gap","ten","reason","occ","type","class","rate","union")
-    
-  out<-rbind(df1,df2,df3,df4)
-  out<-out[which(out$gap>0),]
+  #End Date
+  j1<-as.Date(paste(x[,5],x[,6],x[,7],sep="-"), "%m-%d-%y")
+  j2<-as.Date(paste(x[,16],x[,17],x[,18],sep="-"), "%m-%d-%y")
+  j3<-as.Date(paste(x[,27],x[,28],x[,29],sep="-"), "%m-%d-%y")
+  j4<-as.Date(paste(x[,38],x[,39],x[,40],sep="-"), "%m-%d-%y")
+  j5<-as.Date(paste(x[,49],x[,50],x[,51],sep="-"), "%m-%d-%y")
   
-  return(out)
+  df<-data.frame(ID,j1,j2,j3,j4,j5)
+  df2<-clean(df)
+    names(df2)[3]<-"end"
+  
+  #Tenure
+  j1<-x[,8]
+  j2<-x[,19]
+  j3<-x[,30]
+  j4<-x[,41]
+  j5<-x[,52]
+  
+  df<-data.frame(ID,j1,j2,j3,j4,j5)
+  df3<-clean(df)
+    names(df3)[3]<-"tenure"
+  
+  #Reason
+  j1<-x[,9]
+  j2<-x[,20]
+  j3<-x[,31]
+  j4<-x[,42]
+  j5<-x[,53]
+  
+  df<-data.frame(ID,j1,j2,j3,j4,j5)
+  df4<-clean(df)
+    names(df4)[3]<-"reason"
+  
+  #Occupation
+  j1<-x[,10]
+  j2<-x[,21]
+  j3<-x[,32]
+  j4<-x[,43]
+  j5<-x[,54]
+  
+  df<-data.frame(ID,j1,j2,j3,j4,j5)
+  df5<-clean(df)
+    names(df5)[3]<-"occupation"
+  
+  #Type
+  j1<-x[,11]
+  j2<-x[,22]
+  j3<-x[,33]
+  j4<-x[,44]
+  j5<-x[,55]
+  
+  df<-data.frame(ID,j1,j2,j3,j4,j5)
+  df6<-clean(df)
+    names(df6)[3]<-"type"
+  
+  #Class
+  j1<-x[,12]
+  j2<-x[,23]
+  j3<-x[,34]
+  j4<-x[,45]
+  j5<-x[,56]
+  
+  df<-data.frame(ID,j1,j2,j3,j4,j5)
+  df7<-clean(df)
+    names(df7)[3]<-"class"
+  
+  #Wage
+  j1<-x[,57]
+  j2<-x[,58]
+  j3<-x[,59]
+  j4<-x[,60]
+  j5<-x[,61]
+  
+  df<-data.frame(ID,j1,j2,j3,j4,j5)
+  df8<-clean(df)
+    names(df8)[3]<-"wage"
+  
+  #Collective Bargaining
+  j1<-x[,62]
+  j2<-x[,63]
+  j3<-x[,64]
+  j4<-x[,65]
+  j5<-x[,66]
+  df<-data.frame(ID,j1,j2,j3,j4,j5)
+  df9<-clean(df)
+    names(df9)[3]<-"colbar"
+  
+  temp<-Reduce(function(x,y) merge(x = x, y = y, by = c("ID","job")),list(df1,df2,df3,df4,df5,df6,df7,df8,df9))
+  
+  temp<-temp %>%
+      arrange(ID,desc(job))
+  temp$tenure[which(temp$tenure<0)]<-0
+  return(temp)
 }
 
 
@@ -460,5 +501,8 @@ data<-data %>%
 data$year<-1993
 core.gap<-rbind(core.gap,data)
 
-save(core.gap,file="./Build/Output/coregap.RData")
+core.gap<-core.gap %>%
+  arrange(ID,desc(year,job))
+
+save(core.gap,file="./Build/Output/coregap2.RData")
 

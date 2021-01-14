@@ -82,6 +82,14 @@ load("./Build/Output/corechar.RData")
       core.char$region[is.na(core.char$temp)]<-NA
       core.char$temp<-NULL
       
+      core.char$URATE<-ifelse(core.char$unemply==1, 1.5,
+                               ifelse(core.char$unemply==2, 4.5,
+                                      ifelse(core.char$unemply==3, 7.5,
+                                             ifelse(core.char$unemply==4, 9.5,
+                                                    ifelse(core.char$unemply==5, 12.5,
+                                                           ifelse(core.char$unemply==6,16.5,NA))))))
+      core.char$URATE[is.na(core.char$unemply)]<-NA
+      
 		#Current Age
       core.char$AGE<-core.char$year-as.numeric(format(core.char$bday,'%Y')) #Current Age
       
@@ -142,7 +150,7 @@ load("./Build/Output/corechar.RData")
         
     #Create subset with these variables
       
-      char.2<-core.char[,c("ID","CHILD7","WAGE","OTHINC",
+      char.2<-core.char[,c("ID","CHILD7","WAGE","OTHINC","URATE",
                            "enrollment","marriage","region","year",
                            "SEARCH_ST","SEARCH_PRV","SEARCH_EMP","SEARCH_FRD","SEARCH_ADS",
                            "SEARCH_NEWS","SEARCH_SCHS","SEARCH_OTH","AGE","LIMKIND","LIMAMT")]
