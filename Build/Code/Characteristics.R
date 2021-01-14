@@ -14,6 +14,9 @@ seek<-read.csv("./Build/Input/seeking.csv", as.is=TRUE, header=TRUE)
 corr<-read.csv("./Build/Input/correction.csv", as.is=TRUE, header=TRUE)
   names(corr)<-gsub("R","r",names(corr))
 seek<-merge(seek,corr,by="r0000100",all=TRUE)
+char<-read.csv(file="./Build/Input/default.csv", as.is=TRUE, header=TRUE )
+  char<-char[,c(1,4,5)]
+  names(char)<-c("ID","RACE2","SEX2")
 
 #Create the characteristic files for each year of the data
 
@@ -518,6 +521,7 @@ data<-data %>%
   
 #Merge the Test Data back into sample
   core.char<-merge(core.char,test,by="ID",all.x=TRUE)
+  core.char<-merge(core.char, char, by="ID",all.x=TRUE)
 
 save(core.char,file="./Build/Output/corechar.RData")
 

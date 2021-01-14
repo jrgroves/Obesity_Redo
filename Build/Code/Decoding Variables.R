@@ -14,16 +14,16 @@ load("./Build/Output/corechar.RData")
 
   #subset out for the time non-variable characteristics
 
-    data<-core.char[,c("ID","cntry_birth","hgc_mother","hgc_father","race","sex")]
-      #Remove missing values
-      data<-data[which(data$sex>0),]
-      data<-data[which(data$race>0),]
-      data<-data[which(data$cntry_birth>0),]
+    data<-core.char[,c("ID","race","sex","RACE2")]
+      #Fix missing 
+        data$RACE2<-ifelse(data$RACE2==1, 14,
+                           ifelse(data$RACE2==2,1,0))
+        
     data<-unique(data)
     
     #create Characteristics Dummies
       data$MALE<-ifelse(data$sex==1,1,0)
-      data$FEMALE<-ifelse(data$MALE==1,0,1)
+      data$FEMALE<-ifelse(data$sex!=1,1,0)
       data$HISPAN<-ifelse(data$race>14 & data$race<22,1,0) 
       data$BLACK<-ifelse(data$race==1,1,0)
       data$ASIAN<-ifelse(data$race==2 | data$race==4 | data$race==8 | 
@@ -32,13 +32,12 @@ load("./Build/Output/corechar.RData")
       data$NATAM<-ifelse(data$race==9,1,0)
       data$white<-ifelse(data$BLACK==0 & data$ASIAN==0 & data$HISPAN==0 & 
                            data$NATAM==0,1 ,0)
-      data$born_us<-ifelse(data$cntry_birth==1,1,0)
-      data$hgc_father[which(data$hgc_father<0)]<-NA
-      data$hgc_mother[which(data$hgc_mother<0)]<-NA
+
     #Remove excess
       data$cntry_birth<-NULL
       data$race<-NULL
       data$sex<-NULL
+      data$RACE2<-NULL
   char.1<-data
   load("./Build/Output/test.RData")
   
@@ -53,20 +52,20 @@ load("./Build/Output/corechar.RData")
 #Create time varying variables####
     
     #Marriage
-      core.char$marriage<-ifelse(core.char$martial==1,"Married",
-                                ifelse(core.char$martial==5, "Married",
-                                ifelse(core.char$martial==0, "Nev Married",
-                                ifelse(core.char$martial==2, "Seperated",
-                                ifelse(core.char$martial==3, "Divorced",
-                                ifelse(core.char$martial==6, "Widowed","Missing"))))))
+      core.char$marriage<-ifelse(core.char$martial==1,"MARRIED",
+                                ifelse(core.char$martial==5, "MARRIED",
+                                ifelse(core.char$martial==0, "NEV MARRIED",
+                                ifelse(core.char$martial==2, "SEPERATED",
+                                ifelse(core.char$martial==3, "DIVORCED",
+                                ifelse(core.char$martial==6, "WIDOWED","Missing"))))))
       core.char$marriage[is.na(core.char$marriage)]<-"Missing"
       
-    #Enrollment
-      core.char$enrollment<-ifelse(core.char$enroll==1,"Not Enrolled",
-                              ifelse(core.char$enroll==2, "HS",
-                                ifelse(core.char$enroll==3, "HS PLUS",
-                                  ifelse(core.char$enroll==4, "COLLEGE","Missing"))))
-      core.char$enrollment[is.na(core.char$enrollment)]<-"Missing"
+    #Education
+      core.char$enrollment<-ifelse(core.char$hgc_self>0 & core.char$hgc_self <9 ,"NO HS",
+                              ifelse(core.char$hgc_self > 8 & core.char$hgc_self<12, "NO HS DIP",
+                                ifelse(core.char$hgc_self==12, "HS DIP",
+                                  ifelse(core.char$hgc_self > 12 & core.char$hgc_self < 16, "SOME COLLEGE",
+                                    ifelse(core.char$hgc_self > 15, "COLLEGE PLUS", "NA")))))
     
     #Regional
       core.char$SMSA<-ifelse(core.char$smsa==0,"Not SMSA",
@@ -76,10 +75,10 @@ load("./Build/Output/corechar.RData")
       core.char$SMSA[is.na(core.char$SMSA)]<-"Missing"
       
       core.char$temp<-core.char$region
-      core.char$region<-ifelse(core.char$temp==1,"Northeast",
-                               ifelse(core.char$temp==2, "North Central",
-                                      ifelse(core.char$temp==3, "South",
-                                             ifelse(core.char$temp==4, "West","Missing"))))
+      core.char$region<-ifelse(core.char$temp==1,"NORTHEAST",
+                               ifelse(core.char$temp==2, "NORTH CENT",
+                                      ifelse(core.char$temp==3, "SOUTH",
+                                             ifelse(core.char$temp==4, "WEST","Missing"))))
       core.char$region[is.na(core.char$temp)]<-NA
       core.char$temp<-NULL
       
@@ -143,8 +142,8 @@ load("./Build/Output/corechar.RData")
         
     #Create subset with these variables
       
-      char.2<-core.char[,c("ID","FAMSIZE","CHILD7","WAGE","FAMPOV","OTHINC","SMSA",
-                           "enrollment","marriage","region","year","SEARCH_FT","SEARCH_PT",
+      char.2<-core.char[,c("ID","CHILD7","WAGE","OTHINC",
+                           "enrollment","marriage","region","year",
                            "SEARCH_ST","SEARCH_PRV","SEARCH_EMP","SEARCH_FRD","SEARCH_ADS",
                            "SEARCH_NEWS","SEARCH_SCHS","SEARCH_OTH","AGE","LIMKIND","LIMAMT")]
       

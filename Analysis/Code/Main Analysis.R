@@ -28,19 +28,31 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
                         subset(!is.na(OTHINC))
   #Create additional variables
     core$BMI_Level4<-ifelse(core$BMI_Level3=="Normal" | core$BMI_Level3=="Overweight",
-                            "Normal",core$BMI_Level3)
+                            "Normal","Obese")
+    core$BMI_Level5<-ifelse(core$BMI_Level3=="Normal" | core$BMI_Level3=="Underweight",
+                            "Normal","Obese")
+    
     core$SEX<-ifelse(core$FEMALE==1,"Female","Male")
     
     core<-mutate(core, dummy_cols(enrollment))
     core<-mutate(core, dummy_cols(marriage))
+    core<-mutate(core, dummy_cols(region))
+    core<-mutate(core, dummy_cols(BMI_Level4))
 
-  #Removed unused varaibles from data core
+    names(core)<-gsub(".data_","",names(core))
+  #Removed unused variables from data core
     
     core.old<-core
-    core<-core %>%
-        select(-reason,-occ,-type,-class,-hgc_mother,-hgc_father,-born_us,
-                 -AFQT_2,-AFQT_3,-FAMSIZE,-FAMPOV,-SMSA,-SEARCH_FT,-SEARCH_PT)
 
+    core<-core %>%
+          select("ID","SPELL","Normal","Obese","AGE","MARRIED","CHILD7","HS DIP",
+                 "SOME COLLEGE","COLLEGE PLUS",
+                  "AFQT_1","WAGE","OTHINC","BLACK","ASIAN","HISPAN","NATAM","TENURE","LIMKIND",
+                  "LIMAMT","FORCED","END","TEMP","SEARCH_ST","SEARCH_PRV","SEARCH_EMP","SEARCH_FRD",
+                  "SEARCH_ADS","SEARCH_NEWS","SEARCH_SCHS","SEARCH_OTH","year","IND","OCC","censor",
+                  "BMI_2","BMI_3","BMI_Level2","BMI_Level3","BMI_Level4","BMI_Level5","MALE","FEMALE","SEX",
+                  "NORTH CENT","NORTHEAST","SOUTH","WEST",)
+    
   #Create Male and Female Sub-samples
     core.m<-core %>%
       subset(SEX=="Male")
@@ -50,20 +62,24 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
 
     
 #Summary Statistics for core sample
-    sum<-stargazer(core, type="html", digits=2, out="./Analysis/Output/Summary1.html")
+  
+    
+    stargazer(core, type="text", digits=2, out="./Analysis/Output/sum_full.txt")
+    stargazer(core.m, type="text", digits=2, out="./Analysis/Output/sum_male.txt")
+    stargazer(core.f, type="text", digits=2, out="./Analysis/Output/sum_female.txt")
+
     
     
     
-    
-)
+
     #Translate gaps to Survival Data
-km<-with(core,Surv(gap, censor))
-km.m<-with(core.m,Surv(gap,censor))
-km.f<-with(core.f,Surv(gap,censor))
+km<-with(core,Surv(SPELL, censor))
+km.m<-with(core.m,Surv(SPELL,censor))
+km.f<-with(core.f,Surv(SPELL,censor))
 
 
 
-km_fit1<-survfit(km~factor(BMI_Level3),data=core)
+km_fit1<-survfit(km~factor(BMI_Level4),data=core)
 autoplot(km_fit1)
 
 
