@@ -62,10 +62,10 @@ load("./Build/Output/corechar.RData")
       
     #Education
       core.char$enrollment<-ifelse(core.char$hgc_self>0 & core.char$hgc_self <9 ,"NO HS",
-                              ifelse(core.char$hgc_self > 8 & core.char$hgc_self<12, "NO HS DIP",
-                                ifelse(core.char$hgc_self==12, "HS DIP",
-                                  ifelse(core.char$hgc_self > 12 & core.char$hgc_self < 16, "SOME COLLEGE",
-                                    ifelse(core.char$hgc_self > 15, "COLLEGE PLUS", "NA")))))
+                              ifelse(core.char$hgc_self > 8 & core.char$hgc_self<12, "LessHS",
+                                ifelse(core.char$hgc_self==12, "HS",
+                                  ifelse(core.char$hgc_self > 12 & core.char$hgc_self < 16, "HSPLUS",
+                                    ifelse(core.char$hgc_self > 15, "COLPLUS", "NA")))))
     
     #Regional
       core.char$SMSA<-ifelse(core.char$smsa==0,"Not SMSA",
@@ -75,8 +75,8 @@ load("./Build/Output/corechar.RData")
       core.char$SMSA[is.na(core.char$SMSA)]<-"Missing"
       
       core.char$temp<-core.char$region
-      core.char$region<-ifelse(core.char$temp==1,"NORTHEAST",
-                               ifelse(core.char$temp==2, "NORTH CENT",
+      core.char$region<-ifelse(core.char$temp==1,"NE",
+                               ifelse(core.char$temp==2, "NC",
                                       ifelse(core.char$temp==3, "SOUTH",
                                              ifelse(core.char$temp==4, "WEST","Missing"))))
       core.char$region[is.na(core.char$temp)]<-NA
@@ -97,7 +97,8 @@ load("./Build/Output/corechar.RData")
       core.char$famsize[which(core.char$famsize<0)]<-NA
         names(core.char)[which(names(core.char)=="famsize")]<-"FAMSIZE"   
         
-      core.char$CHILD7<-ifelse(core.char$youngest<8,1,0)
+      core.char$youngest[which(core.char$youngest<0)]<-0
+      core.char$CHILD7<-ifelse(core.char$youngest<8 & core.char$youngest>0,1,0)
         core.char$CHILD7[is.na(core.char$youngest)]<-NA
       
       core.char$pinc[which(core.char$pinc<0)]<-NA
@@ -226,13 +227,13 @@ load("./Build/Output/corechar.RData")
         char.3<-temp %>%
                   select(-c("feet","inch"))
         char.3<-char.3[!is.na(char.3$year),]
-        char.3$BMI_Level1<-ifelse(char.3$BMI_1>29.9,"Obese",
+        char.3$BMI_Level1<-ifelse(char.3$BMI_1>=30,"Obese",
                                   ifelse(char.3$BMI_1>24.9 & char.3$BMI_1<30, "Overweight",
                                          ifelse(char.3$BMI_1>18.49 & char.3$BMI_1<25, "Normal","Underweight")))
-        char.3$BMI_Level2<-ifelse(char.3$BMI_2>29.9,"Obese",
+        char.3$BMI_Level2<-ifelse(char.3$BMI_2>=30,"Obese",
                                   ifelse(char.3$BMI_2>24.9 & char.3$BMI_2<30, "Overweight",
                                          ifelse(char.3$BMI_2>18.49 & char.3$BMI_2<25, "Normal","Underweight")))
-        char.3$BMI_Level3<-ifelse(char.3$BMI_3>29.9,"Obese",
+        char.3$BMI_Level3<-ifelse(char.3$BMI_3>=30,"Obese",
                                   ifelse(char.3$BMI_3>24.9 & char.3$BMI_3<30, "Overweight",
                                          ifelse(char.3$BMI_3>18.49 & char.3$BMI_3<25, "Normal","Underweight")))
         rm(temp)

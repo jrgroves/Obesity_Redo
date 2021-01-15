@@ -14,7 +14,7 @@ library(fastDummies)
 
 #Load constructed data and create core analysis data
 load("./Build/Output/core.RData")
-load("./Build/Output/gapcore2.RData")
+load("./Build/Output/gapcore.RData")
 
 core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
 
@@ -57,14 +57,13 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
     core.org<-core
 
     core<-core %>%
-          select("ID","SPELL","Normal","Obese","AGE","MARRIED","CHILD7","HS DIP",
-                 "SOME COLLEGE","COLLEGE PLUS",
-                  "AFQT_1","WAGE","OTHINC","BLACK","ASIAN","HISPAN","NATAM","TENURE",
-                 "LIMKIND","EXPER",
-                  "LIMAMT","URATE","FORCED","END","TEMP","SEARCH_ST","SEARCH_PRV","SEARCH_EMP","SEARCH_FRD",
-                  "SEARCH_ADS","SEARCH_NEWS","SEARCH_SCHS","SEARCH_OTH","year","IND","OCC","ended",
-                  "BMI_3","BMI_Level4","MALE","FEMALE","SEX",
-                  "NORTH CENT","NORTHEAST","SOUTH","WEST")
+          select("ID","SPELL","Normal","Obese","AGE","MARRIED","CHILD7","HS",
+                 "HSPLUS","COLPLUS","AFQT_1","WAGE","OTHINC","BLACK","ASIAN",
+                 "HISPAN","NATAM","TENURE","LIMKIND","EXPER","LIMAMT","URATE",
+                 "FORCED","END","TEMP","SEARCH_ST","SEARCH_PRV","SEARCH_EMP",
+                 "SEARCH_FRD","SEARCH_ADS","SEARCH_NEWS","SEARCH_SCHS","SEARCH_OTH",
+                 "year","IND","OCC","ended","BMI_3","BMI_Level4","MALE","FEMALE",
+                 "SEX","NC","NE","SOUTH","WEST","BMI_Level3")
     
   #Create Male and Female Sub-samples
     core.m<-core %>%
@@ -81,41 +80,49 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
     stargazer(core.m, type="text", digits=2, out="./Analysis/Output/sum_male.txt")
     stargazer(core.f, type="text", digits=2, out="./Analysis/Output/sum_female.txt")
 
-    
-    
-    
 
     #Translate gaps to Survival Data
-km<-with(core,Surv(SPELL, ended))
-km.m<-with(core.m,Surv(SPELL,ended))
-km.f<-with(core.f,Surv(SPELL,ended))
+      km<-with(core,Surv(SPELL, ended))
+      km.m<-with(core.m,Surv(SPELL,ended))
+      km.f<-with(core.f,Surv(SPELL,ended))
 
 
+  #Draw the KM Survival Curves
+    km_fit1<-survfit(km~factor(BMI_Level4),data=core)
+    full.km<-autoplot(km_fit1)
+    
+    km_fit2<-survfit(km.f~factor(BMI_Level4),data=core.f)
+    male.km<-autoplot(km_fit2)
+    
+    km_fit2<-survfit(km.m~factor(BMI_Level4),data=core.m)
+    female.km<-autoplot(km_fit2)
 
-km_fit1<-survfit(km~factor(BMI_Level4),data=core)
-autoplot(km_fit1)
-
-
-km_fit2<-survfit(km.f~factor(BMI_Level4),data=core.f)
-autoplot(km_fit2)
-
-km_fit2<-survfit(km.m~factor(BMI_Level4),data=core.m)
-autoplot(km_fit2)
-
-km_fit3<-survfit(km~factor(BMI_Level4)+factor(SEX),data=core)
-autoplot(km_fit3)
-
-mod1m<-coxph(km.m~Obese,data=core.m)
-mod1f<-coxph(km.f~Obese,data=core.f)
-  mod2f<-coxph(km.f~Obese+AGE+BLACK+ASIAN+HISPAN+MARRIED+
-                 CHILD7+WAGE+OTHINC++AFQT_1+frailty(ID),data=core.f)
-
-
-
-mod2<-coxph(km~factor(BMI_Level4)+factor(SEX),data=core)
-
-
+    
+  #Modeling
+    mod1m<-coxph(km.m~Obese+frailty(ID),data=core.m)
+    mod1f<-coxph(km.f~factor(BMI_Level3)+frailty(ID),data=core.f)
   
-mod1m<-coxph(km.m~factor(BMI_Level4)+1,data=core.m)
-mod1f<-coxph(km.f~factor(BMI_Level4)+1,data=core.f)
+    mod2m<-coxph(km.m~Obese+AGE+BLACK+ASIAN+HISPAN+MARRIED+
+                   CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
+                   EXPER+frailty(ID),data=core.m)
+    mod2f<-coxph(km.f~factor(BMI_Level3)+AGE+BLACK+ASIAN+HISPAN+MARRIED+
+                 CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
+                 EXPER+frailty(ID),data=core.f)
 
+    mod3m<-coxph(km.m~Obese+AGE+BLACK+ASIAN+HISPAN+MARRIED+
+                   CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
+                   EXPER+URATE+TENURE+LIMKIND+LIMAMT+NE+SOUTH+WEST+
+                   frailty(ID),data=core.m)
+    mod3f<-coxph(km.f~Obese+AGE+BLACK+ASIAN+HISPAN+MARRIED+
+                   CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
+                   EXPER+URATE+TENURE+LIMKIND+LIMAMT+NE+SOUTH+WEST+
+                   +frailty(ID),data=core.f)
+    
+    mod4m<-coxph(km.m~Obese+AGE+BLACK+ASIAN+HISPAN+MARRIED+
+                   CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
+                   EXPER+URATE+TENURE+LIMKIND+LIMAMT+NE+SOUTH+WEST+
+                   factor(OCC)+factor(IND)+frailty(ID),data=core.m)
+    mod4f<-coxph(km.f~factor(BMI_Level3)+AGE+BLACK+ASIAN+HISPAN+MARRIED+
+                   CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
+                   EXPER+URATE+TENURE+LIMKIND+LIMAMT+NE+SOUTH+WEST+
+                   factor(OCC)+factor(IND)+frailty(ID),data=core.f)

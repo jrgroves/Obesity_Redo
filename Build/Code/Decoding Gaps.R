@@ -17,14 +17,13 @@ core<-core.gap %>%
           subset(type>0) %>%
             subset(reason>0) %>%
               subset(ten>0) %>%
-                subset(union>=0) %>%
-                  subset(rate>0)
+                subset(union>=0) 
 
 core$gap<-as.numeric(core$gap) #Convert 'days' to numeric value
 
 core<-core %>%
     subset(gap<=365)
-core$censor<-ifelse(core$gap==365,0,1) #1 Indicates the end of spell was observed
+core$ended<-ifelse(core$gap==365,0,1) #1 Indicates the end of spell was observed
 
 
 #Create Occupation and Type Variables
@@ -69,7 +68,14 @@ core$censor<-ifelse(core$gap==365,0,1) #1 Indicates the end of spell was observe
   names(core)[which(names(core)=="ten")]<-"TENURE"
   
 gap.core<-core %>%
-      select(ID,SPELL,TENURE,IND,OCC,FORCED,END,TEMP,LAYOFF,SEP_OTH,rate,censor,year)
+      select(ID,SPELL,TENURE,IND,OCC,FORCED,END,TEMP,LAYOFF,SEP_OTH,rate,ended,year)
+
+gap.core<-gap.core %>%
+    arrange(ID,year) %>%
+      group_by(ID) %>%
+        mutate(EXPER=cumsum(TENURE))
+
+
 save(gap.core, file="./Build/Output/gapcore.RData")
   
   
