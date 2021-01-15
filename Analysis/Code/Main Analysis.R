@@ -14,7 +14,7 @@ library(fastDummies)
 
 #Load constructed data and create core analysis data
 load("./Build/Output/core.RData")
-load("./Build/Output/gapcore.RData")
+load("./Build/Output/gapcore2.RData")
 
 core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
 
@@ -25,15 +25,20 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
                 subset(!is.na(BMI_3)) %>%
                   subset(!is.na(LIMAMT)) %>%
                     subset(!is.na(LIMKIND)) %>%
-                        subset(!is.na(OTHINC))
+                        subset(!is.na(OTHINC)) %>%
+                          subset(!is.na(URATE)) %>%
+                            subset(!is.na(CHILD7)) %>%
+                              subset(BMI_Level3!="Underweight")  #Remove underweight for health reasons
+
+    core$WAGE[is.infinite(core$WAGE)]<-0
+    core$OTHINC[is.infinite(core$OTHINC)]<-0
+            
   #Create additional variables
     
     
-    core$BMI_Level4<-ifelse(core$BMI_Level3=="Normal" | core$BMI_Level3=="Overweight",
+    core$BMI_Level4<-ifelse(core$BMI_Level3=="Normal" | core$BMI_Level3=="Overweight",  #Add Overweight to "normal category
                             "Normal",core$BMI_Level3)
-    core$BMI_Level5<-ifelse(core$BMI_Level3=="Normal" | core$BMI_Level3=="Underweight",
-                           "Normal","Obese")
-    
+
     core$SEX<-ifelse(core$FEMALE==1,"Female","Male")
     
     core<-mutate(core, dummy_cols(enrollment))
@@ -43,22 +48,23 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
 
     names(core)<-gsub(".data_","",names(core))
     
-    core<-core %>%
-      replace(is.na(.), 0) %>%
-              mutate(SEARCH_CT = rowSums(.[31:38]))
+    #core<-core %>%
+    #  replace(is.na(.), 0) %>%
+    #          mutate(SEARCH_CT = rowSums(.[31:38]))
 
   #Removed unused variables from data core
     
-    core.old<-core
+    core.org<-core
 
     core<-core %>%
           select("ID","SPELL","Normal","Obese","AGE","MARRIED","CHILD7","HS DIP",
                  "SOME COLLEGE","COLLEGE PLUS",
-                  "AFQT_1","WAGE","OTHINC","BLACK","ASIAN","HISPAN","NATAM","TENURE","LIMKIND",
-                  "LIMAMT","URATE","FORCED","END","TEMP","SEARCH_CT","SEARCH_ST","SEARCH_PRV","SEARCH_EMP","SEARCH_FRD",
+                  "AFQT_1","WAGE","OTHINC","BLACK","ASIAN","HISPAN","NATAM","TENURE",
+                 "LIMKIND","EXPER",
+                  "LIMAMT","URATE","FORCED","END","TEMP","SEARCH_ST","SEARCH_PRV","SEARCH_EMP","SEARCH_FRD",
                   "SEARCH_ADS","SEARCH_NEWS","SEARCH_SCHS","SEARCH_OTH","year","IND","OCC","ended",
-                  "BMI_2","BMI_3","BMI_Level2","BMI_Level3","BMI_Level4","BMI_Level5","MALE","FEMALE","SEX",
-                  "NORTH CENT","NORTHEAST","SOUTH","WEST",)
+                  "BMI_3","BMI_Level4","MALE","FEMALE","SEX",
+                  "NORTH CENT","NORTHEAST","SOUTH","WEST")
     
   #Create Male and Female Sub-samples
     core.m<-core %>%
@@ -99,7 +105,13 @@ autoplot(km_fit2)
 km_fit3<-survfit(km~factor(BMI_Level4)+factor(SEX),data=core)
 autoplot(km_fit3)
 
-mod1<-coxph(km~factor(BMI_Level4),data=core)
+mod1m<-coxph(km.m~Obese,data=core.m)
+mod1f<-coxph(km.f~Obese,data=core.f)
+  mod2f<-coxph(km.f~Obese+AGE+BLACK+ASIAN+HISPAN+MARRIED+
+                 CHILD7+WAGE+OTHINC++AFQT_1+frailty(ID),data=core.f)
+
+
+
 mod2<-coxph(km~factor(BMI_Level4)+factor(SEX),data=core)
 
 

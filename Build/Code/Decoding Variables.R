@@ -101,13 +101,13 @@ load("./Build/Output/corechar.RData")
         core.char$CHILD7[is.na(core.char$youngest)]<-NA
       
       core.char$pinc[which(core.char$pinc<0)]<-NA
-        names(core.char)[which(names(core.char)=="pinc")]<-"WAGE"
+        core.char$WAGE<-log(core.char$pinc)
       
       core.char$fampov[which(core.char$fampov<0)]<-NA
         names(core.char)[which(names(core.char)=="fampov")]<-"FAMPOV"
       
       core.char$income[which(core.char$income<0)]<-NA
-        names(core.char)[which(names(core.char)=="income")]<-"OTHINC"
+        core.char$OTHINC<-log(core.char$income)
         
     #Search Variables
         core.char$smeth1[which(core.char$smeth1<0)]<-NA

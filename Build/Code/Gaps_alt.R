@@ -111,7 +111,7 @@ gaps <- function(x) {
   
   df<-data.frame(ID,j1,j2,j3,j4,j5)
   df8<-clean(df)
-    names(df8)[3]<-"wage"
+    names(df8)[3]<-"rate"
   
   #Collective Bargaining
   j1<-x[,62]

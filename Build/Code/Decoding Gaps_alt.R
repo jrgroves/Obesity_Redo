@@ -23,13 +23,17 @@ load("./Build/Output/coregap2.RData")
     
     core$spell<-core$gap.end-core$end   
     
-    core <- core %>%
+    core <- core %>%   #Removes negative spells caused by data entry error or overlapping jobs
         subset(spell>0)
     core$spell<-as.numeric(core$spell)
     
-    core<-core %>%
+    core<-core %>%   #Remove spells over 365 days and mark those at 365 as right censored
       subset(spell<=365)
     core$ended<-ifelse(core$spell==365,0,1) #1 Indicates the end of spell was observed
+    
+    core<-core %>%   #Create the experience variable as the cumulative sum of tenures measured at spell end.
+        group_by(ID) %>%
+          mutate(EXPER=cumsum(tenure))
 
 #Remove observations with missing data
 
@@ -38,11 +42,7 @@ core<-core %>%
           subset(type>0) %>%
             subset(reason>0) %>%
               subset(tenure>0) %>%
-                subset(colbar>=0) %>%
-                  subset(wage>0)
-
-
-
+                subset(colbar>=0) 
 
 
 #Create Occupation and Type Variables
@@ -86,9 +86,9 @@ core<-core %>%
   names(core)[which(names(core)=="tenure")]<-"TENURE"
   names(core)[which(names(core)=="spell")]<-"SPELL"
 
-  
+
 gap.core<-core %>%
-      select(ID,SPELL,TENURE,IND,OCC,FORCED,END,TEMP,LAYOFF,SEP_OTH,wage,ended,year)
+      select(ID,SPELL,TENURE,IND,OCC,FORCED,END,TEMP,LAYOFF,SEP_OTH,rate,ended,year,EXPER)
 save(gap.core, file="./Build/Output/gapcore2.RData")
   
   
