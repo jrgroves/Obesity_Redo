@@ -67,8 +67,11 @@ core$ended<-ifelse(core$gap==365,0,1) #1 Indicates the end of spell was observed
   names(core)[which(names(core)=="gap")]<-"SPELL"
   names(core)[which(names(core)=="ten")]<-"TENURE"
   
+  core$newjob[which(core$newjob<0)]<-0
+    names(core)[which(names(core)=="newjob")]<-"NEWJOB"
+  
 gap.core<-core %>%
-      select(ID,SPELL,TENURE,IND,OCC,FORCED,END,TEMP,LAYOFF,SEP_OTH,rate,ended,year)
+      select(ID,SPELL,TENURE,IND,OCC,FORCED,END,TEMP,LAYOFF,SEP_OTH,NEWJOB,rate,ended,year)
 
 gap.core<-gap.core %>%
     arrange(ID,year) %>%

@@ -36,6 +36,10 @@ load("./Build/Output/coregap2.RData")
           mutate(EXPER=cumsum(tenure))
 
 #Remove observations with missing data
+    
+    #sets valid skips to zero
+    core$tenure[which(core$tenure==-4)]<-0
+    core$colbar[which(core$colbar==-4)]<-0
 
 core<-core %>%
         subset(occupation>0) %>%
@@ -85,10 +89,13 @@ core<-core %>%
   
   names(core)[which(names(core)=="tenure")]<-"TENURE"
   names(core)[which(names(core)=="spell")]<-"SPELL"
+  
+  core$newjob[which(core$newjob<0)]<-0
+  names(core)[which(names(core)=="newjob")]<-"NEWJOB"
 
 
 gap.core<-core %>%
-      select(ID,SPELL,TENURE,IND,OCC,FORCED,END,TEMP,LAYOFF,SEP_OTH,rate,ended,year,EXPER)
+      select(ID,SPELL,TENURE,IND,OCC,FORCED,END,TEMP,LAYOFF,SEP_OTH,NEWJOB,rate,ended,year,EXPER)
 save(gap.core, file="./Build/Output/gapcore2.RData")
   
   

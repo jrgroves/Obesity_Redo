@@ -54,7 +54,7 @@ load("./Build/Output/corechar.RData")
     #Marriage
       core.char$marriage<-ifelse(core.char$martial==1,"MARRIED",
                                 ifelse(core.char$martial==5, "MARRIED",
-                                ifelse(core.char$martial==0, "NEV MARRIED",
+                                ifelse(core.char$martial==0 | core.char$marital==-4, "NEV MARRIED",
                                 ifelse(core.char$martial==2, "SEPERATED",
                                 ifelse(core.char$martial==3, "DIVORCED",
                                 ifelse(core.char$martial==6, "WIDOWED","Missing"))))))
@@ -94,20 +94,24 @@ load("./Build/Output/corechar.RData")
       core.char$AGE<-core.char$year-as.numeric(format(core.char$bday,'%Y')) #Current Age
       
    #Family and Income
-      core.char$famsize[which(core.char$famsize<0)]<-NA
+      core.char$famsize[which(core.char$famsize==-5)]<-NA
+      core.char$famsize[which(core.char$famsize==-4)]<-0
         names(core.char)[which(names(core.char)=="famsize")]<-"FAMSIZE"   
         
-      core.char$youngest[which(core.char$youngest<0)]<-0
+      core.char$youngest[which(core.char$youngest==-5)]<-NA
+      core.char$youngest[which(core.char$youngest==-4)]<-0
       core.char$CHILD7<-ifelse(core.char$youngest<8 & core.char$youngest>0,1,0)
         core.char$CHILD7[is.na(core.char$youngest)]<-NA
       
-      core.char$pinc[which(core.char$pinc<0)]<-NA
+      core.char$pinc[which(core.char$pinc<=0)]<-NA
         core.char$WAGE<-log(core.char$pinc)
       
-      core.char$fampov[which(core.char$fampov<0)]<-NA
+      core.char$fampov[which(core.char$fampov==-5)]<-NA
+      core.char$fampov[which(core.char$fampov==-4)]<-0
         names(core.char)[which(names(core.char)=="fampov")]<-"FAMPOV"
       
-      core.char$income[which(core.char$income<0)]<-NA
+      core.char$income[which(core.char$income==-5)]<-NA
+      core.char$income[which(core.char$income==-4)]<-0
         core.char$OTHINC<-log(core.char$income)
         
     #Search Variables
@@ -142,10 +146,12 @@ load("./Build/Output/corechar.RData")
         core.char$searchft<-NULL
 
     #Limitations Variables
-        core.char$limkind[which(core.char$limkind<0)]<-NA
+        core.char$limkind[which(core.char$limkind==-5)]<-NA
+        core.char$limkind[which(core.char$limkind==-4)]<-0
         core.char$limkind[which(core.char$limkind==2)]<-0
           names(core.char)[which(names(core.char)=="limkind")]<-"LIMKIND"   
-        core.char$limamt[which(core.char$limamt<0)]<-NA
+        core.char$limamt[which(core.char$limamt==-5)]<-NA
+        core.char$limamt[which(core.char$limamt==-4)]<-0
         core.char$limamt[which(core.char$limamt==2)]<-0
           names(core.char)[which(names(core.char)=="limamt")]<-"LIMAMT"  
         
