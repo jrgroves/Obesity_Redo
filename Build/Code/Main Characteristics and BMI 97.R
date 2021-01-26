@@ -13,7 +13,7 @@ library(measurements)
 #Loading extra characteristics added later
 core<-read.csv("./Build/Input/core2.csv", as.is=TRUE, header=TRUE)
 
-#Create Main Time Consistatnt Characteristics
+#Create Main Time Consistent Characteristics
 core <- core%>%
     rename(Gender="R0536300") %>%
       rename(Bday.m="R0536401") %>%
@@ -133,7 +133,7 @@ core.2<-core.2 %>%
         subset(zW > -2.5) %>%
           subset(zW < 2.5)
     
-#Remerge Time Constant Characteristics Keeping on ly Core.2 Values
+#Merge Time Constant Characteristics Keeping on ly Core.2 Values
     core<-merge(core.1,core.2,by=c("ID","Year"),all.y=TRUE)
     
 #Save File
