@@ -11,10 +11,12 @@ library(ggplot2)
 library(ggfortify)
 library(stargazer)
 library(fastDummies)
+library(survminer)
+library(timereg)
 
 #Load constructed data and create core analysis data
 load("./Build/Output/core.RData")
-load("./Build/Output/gapcore.RData")
+load("./Build/Output/gapcore2.RData")
 
 core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
 
@@ -27,8 +29,7 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
                     subset(!is.na(LIMKIND)) %>%
                         subset(!is.na(OTHINC)) %>%
                           subset(!is.na(URATE)) %>%
-                            subset(!is.na(CHILD7)) %>%
-                              subset(BMI_Level3!="Underweight")  #Remove underweight for health reasons
+                            subset(!is.na(CHILD7)) 
 
     core$WAGE[is.infinite(core$WAGE)]<-0
     core$OTHINC[is.infinite(core$OTHINC)]<-0
@@ -48,9 +49,9 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
 
     names(core)<-gsub(".data_","",names(core))
     
-    #core<-core %>%
-    #  replace(is.na(.), 0) %>%
-    #          mutate(SEARCH_CT = rowSums(.[31:38]))
+  #  core<-core %>%
+  #    replace(is.na(.), 0) %>%
+  #            mutate(SEARCH_CT = rowSums(.[31:38]))
 
   #Removed unused variables from data core
     
@@ -63,7 +64,7 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
                  "FORCED","END","TEMP","SEARCH_ST","SEARCH_PRV","SEARCH_EMP",
                  "SEARCH_FRD","SEARCH_ADS","SEARCH_NEWS","SEARCH_SCHS","SEARCH_OTH",
                  "year","IND","OCC","ended","BMI_3","BMI_Level4","MALE","FEMALE",
-                 "SEX","NC","NE","SOUTH","WEST","BMI_Level3")
+                 "SEX","NC","NE","SOUTH","WEST","BMI_Level3","NEWJOB")
     
   #Create Male and Female Sub-samples
     core.m<-core %>%
@@ -71,6 +72,9 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
 
     core.f<-core %>%
       subset(SEX=="Female")
+    
+    core.O<-core %>%
+      subset(Obese==1)
 
     
 #Summary Statistics for core sample
@@ -85,6 +89,7 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
       km<-with(core,Surv(SPELL, ended))
       km.m<-with(core.m,Surv(SPELL,ended))
       km.f<-with(core.f,Surv(SPELL,ended))
+      km.o<-with(core.O,Surv(SPELL,ended))
 
 
   #Draw the KM Survival Curves
@@ -99,30 +104,31 @@ core<-merge(gap.core,char.core,by=c("ID","year"),all.x=TRUE)
 
     
   #Modeling
-    mod1m<-coxph(km.m~Obese+frailty(ID),data=core.m)
-    mod1f<-coxph(km.f~factor(BMI_Level3)+frailty(ID),data=core.f)
+    mod1<-coxph(km~Obese+frailty(ID),data=core)
+    mod1a<-coxph(km~Obese+FEMALE+(Obese*FEMALE),data=core)
+    mod1b<-coxph(km~Obese+FEMALE+(Obese*FEMALE)+frailty(ID),data=core)
+      c<-survfit(km.o~FEMALE,data=core.O)
+   mod1c<-coxph(km.o~FEMALE,data=core.O)
   
-    mod2m<-coxph(km.m~Obese+AGE+BLACK+ASIAN+HISPAN+MARRIED+
+    mod2<-coxph(km~FEMALE+Obese+AGE+BLACK+ASIAN+HISPAN+MARRIED+
                    CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
-                   EXPER+frailty(ID),data=core.m)
-    mod2f<-coxph(km.f~factor(BMI_Level3)+AGE+BLACK+ASIAN+HISPAN+MARRIED+
-                 CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
-                 EXPER+frailty(ID),data=core.f)
+                   EXPER,data=core)
 
-    mod3m<-coxph(km.m~Obese+AGE+BLACK+ASIAN+HISPAN+MARRIED+
-                   CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
-                   EXPER+URATE+TENURE+LIMKIND+LIMAMT+NE+SOUTH+WEST+
-                   frailty(ID),data=core.m)
-    mod3f<-coxph(km.f~Obese+AGE+BLACK+ASIAN+HISPAN+MARRIED+
-                   CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
-                   EXPER+URATE+TENURE+LIMKIND+LIMAMT+NE+SOUTH+WEST+
-                   +frailty(ID),data=core.f)
     
-    mod4m<-coxph(km.m~Obese+AGE+BLACK+ASIAN+HISPAN+MARRIED+
-                   CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
-                   EXPER+URATE+TENURE+LIMKIND+LIMAMT+NE+SOUTH+WEST+
-                   factor(OCC)+factor(IND)+frailty(ID),data=core.m)
-    mod4f<-coxph(km.f~factor(BMI_Level3)+AGE+BLACK+ASIAN+HISPAN+MARRIED+
-                   CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
-                   EXPER+URATE+TENURE+LIMKIND+LIMAMT+NE+SOUTH+WEST+
-                   factor(OCC)+factor(IND)+frailty(ID),data=core.f)
+    mod3<-coxph(km~FEMALE+Obese+(Obese*FEMALE)+AGE+BLACK+ASIAN+HISPAN+MARRIED+
+                  CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
+                  EXPER+TENURE+OCC+IND+URATE+NE+SOUTH+WEST+
+                  LIMKIND+LIMAMT+FORCED+END+
+                  SEARCH_ST+SEARCH_ADS+SEARCH_FRD+SEARCH_SCHS+
+                  SEARCH_PRV+SEARCH_EMP+SEARCH_NEWS+SEARCH_OTH,data=core)
+    
+    mod3<-survreg(km~FEMALE+Obese+(Obese*FEMALE)+AGE+BLACK+ASIAN+HISPAN+MARRIED+
+                  CHILD7+WAGE+OTHINC+HS+HSPLUS+COLPLUS+AFQT_1+
+                  EXPER+TENURE+OCC+IND+URATE+NE+SOUTH+WEST+
+                  LIMKIND+LIMAMT+FORCED+END+
+                  SEARCH_ST+SEARCH_ADS+SEARCH_FRD+SEARCH_SCHS+
+                  SEARCH_PRV+SEARCH_EMP+SEARCH_NEWS+SEARCH_OTH+
+                  NEWJOB,data=core,dist="weibull")su
+    
+    
+   
