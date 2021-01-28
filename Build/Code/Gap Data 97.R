@@ -7,7 +7,7 @@ rm(list=ls())
 library(tidyverse)
 library(data.table)
 
-source("./Build/Input/Gaps97.R")
+source("./Build/Code/Gaps97.R")
 
 rm(list=c("qnames","vallabels","varlabels"))
 
@@ -29,7 +29,19 @@ core <- core %>%
             status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
             status == 4 ~ 1,
             status == 3 | status > 100 ~ 0)) %>%
+      mutate(Working = case_when(
+          status<1 ~ 0,
+          is.na(status) ~ 0,
+          status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
+          status == 4 ~ 0,
+          status == 3 | status > 100 ~ 1)) %>%
               arrange(ID)
+
+core <- core %>%
+    group_by(ID) %>%
+      mutate(tenure = cumsum(Working))
+
+
 #Generate Spell Lengths and Start and End Dates
 
 d <- core %>%
@@ -63,26 +75,26 @@ g <- e %>%
 
 f<-e %>%
   subset(spell2>0) %>%
-  mutate(Wid2=lead(Wid)) %>%
-  mutate(blah=ifelse(Wid+1==(Wid2), 1, 0)) %>%
-  mutate(ends=ifelse(blah==0,Wid,0)) %>%
-  mutate(starts=lag(ifelse(ends>0,lead(Wid),0)))
+     mutate(Wid2=lead(Wid)) %>%
+       mutate(blah=ifelse(Wid+1==(Wid2), 1, 0)) %>%
+        mutate(ends=ifelse(blah==0,Wid,0)) %>%
+          mutate(starts=lag(ifelse(ends>0,lead(Wid),0)))
 
 f$starts[is.na(f$starts)]<-f$Wid[is.na(f$starts)]
 f$ends[is.na(f$ends)]<-f$Wid[is.na(f$ends)]
 
 f <- f %>%
   subset(ends !=0 | starts !=0) %>%
-  mutate(ends=lead(ends)) %>%
-  group_by(ID) %>%
-  distinct(spell2, .keep_all=TRUE) %>%
-  select(ID,spell,spell2,ends,starts)
+      mutate(ends=lead(ends)) %>%
+        group_by(ID) %>%
+          distinct(spell2, .keep_all=TRUE) %>%
+             select(ID,spell,spell2,ends,starts,tenure)
 
 
 f<-merge(f,spell.time,by.x="starts",by.y="Wid")
   names(f)[which(names(f)=="period")]<-"Spell.Start"
 f<-merge(f,spell.time,by.x="ends",by.y="Wid")
-names(f)[which(names(f)=="period")]<-"Spell.Ends"
+  names(f)[which(names(f)=="period")]<-"Spell.Ends"
 
 f<-f%>%
   arrange(ID,spell2) %>%
@@ -94,8 +106,9 @@ gaps<-arrange(gaps,ID,spell2)
   
 rm(d,e,f,g,spell.time,new_data,core)
 
-gaps$event<-1
+#Final Data set
 
+gaps$event<-1
 save(gaps,file="./Build/Output/gaps97.RData")
 
 
