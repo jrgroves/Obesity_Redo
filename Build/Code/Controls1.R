@@ -1,9 +1,5 @@
 
-# Set working directory
-# setwd()
-
-
-new_data <- read.table('Controls1.dat', sep=' ')
+new_data <- read.table('./Build/Input/Controls1.dat', sep=' ')
 names(new_data) <- c('R0000100',
   'R0320600',
   'R0490300',
@@ -4106,10 +4102,10 @@ qnames = function(data) {
 #********************************************************************************************************
 
 # Remove the '#' before the following line to create a data file called "categories" with value labels. 
-#categories <- vallabels(new_data)
+categories <- vallabels(new_data)
 
 # Remove the '#' before the following lines to rename variables using Qnames instead of Reference Numbers
-#new_data <- qnames(new_data)
+new_data <- qnames(new_data)
 #categories <- qnames(categories)
 
 # Produce summaries for the raw (uncategorized) data file
