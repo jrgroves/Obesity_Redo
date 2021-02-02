@@ -19,15 +19,10 @@ core.h<-core %>%
       pivot_longer(!ID, names_to = "Year", values_to = "Health.raw") %>%
         mutate( Year=as.numeric(gsub("YHEA-100_","",Year))) %>%
           mutate(Health = case_when(
-<<<<<<< HEAD
             Health.raw < 3  ~ "Good",
             Health.raw == 3 ~ "Average",
             Health.raw > 3 ~ "Poor"))
-=======
-            Health.raw < 3  ~ "Good Health",
-            Health.raw == 3 ~ "Average Health",
-            Health.raw > 3 ~ "Poor Health"))
->>>>>>> acef53a5ecfe6365acf2f04e53dc6f8343ca9878
+
 
 #Census Regions and Locality
 
@@ -100,7 +95,7 @@ core.cont<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                   list(core.c6, core.cr, core.ed, core.h,
                          core.hhs, core.wage, core.othinc, core.ur))
 
-<<<<<<< HEAD
+
 save(core.cont,file="./Build/OUtput/Controls97.RData")
 
 #Pull Out the Cong. Score#
@@ -111,6 +106,3 @@ cong.s<-core %>%
       select(ID, Score)
 
 save(cong.s, file="./Build/Output/Score.RData")
-=======
-save(core.cont,file="./Build/OUtput/Controls.RData")
->>>>>>> acef53a5ecfe6365acf2f04e53dc6f8343ca9878

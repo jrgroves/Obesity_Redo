@@ -110,16 +110,10 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                    Health_Average+Health_Poor+Region_NorEst+Region_South+
                    Region_West, data=core.m)
     
-    mod4<-coxph(km~BMI_Level_Obese+BMI_Level_Overweight+BMI_Level_Underweight+
-                   BMI_Level_Obese*Race_Black+
-                   BMI_Level_Obese*Race_Hispanic+
-                   BMI_Level_Overweight*Race_Black+
-                   BMI_Level_Overweight*Race_Hispanic+
-                   BMI_Level_Underweight*Race_Black+
-                   BMI_Level_Underweight*Race_Hispanic+
-                   Age+Race_Black+Race_Hispanic+
-                   Race_Mixed+Child6+OTHINC+Education_HS+
-                   Education_SomeCol+Education_CollegePlus+Score+tenure+
-                   Health_Average+Health_Poor+Region_NorEst+Region_South+
-                   Region_West, data=main)
+    mod4<-coxph(km~factor(BMI_Level)+Female+Age+Race_Black+Race_Hispanic+
+                  Race_Mixed+Child6+OTHINC+Education_HS+
+                  Education_SomeCol+Education_CollegePlus+Score+tenure+
+                  Health_Average+Health_Poor+Region_NorEst+Region_South+
+                  Region_West+
+                  factor(IND)+factor(OCC), data=main)
     

@@ -8,6 +8,7 @@ library(tidyverse)
 library(data.table)
 
 source("./Build/Code/Gaps97.R")
+load("./Build/Input/OCC_IND.RData")
 
 rm(list=c("qnames","vallabels","varlabels"))
 
@@ -20,9 +21,10 @@ names(core)<-gsub("EMP_STATUS_","",names(core))
 names(core)<-gsub("_XRND","",names(core))
 
 core <- core %>%
-    gather(period,status,-ID) %>%
+    pivot_longer(!ID,names_to="period",values_to="status") %>%
       mutate(Year=substr(period,1,4)) %>%
         mutate(Week=substr(period,6,7)) %>%
+          mutate(UID = ifelse(status>100,status,NA)) %>%
           mutate(Unemp = case_when(
             status<1 ~ 0,
             is.na(status) ~ 0,
@@ -41,6 +43,11 @@ core <- core %>%
     group_by(ID) %>%
       mutate(tenure = cumsum(Working))
 
+c<-IOU %>%
+   select(JID,OCC,IND)%>%
+    distinct(JID, .keep_all = TRUE)
+
+        
 
 #Generate Spell Lengths and Start and End Dates
 
@@ -65,15 +72,17 @@ spell.time<-e %>%   #Need this for translation later
 spell.time$ID<-NULL
 
 g <- e %>%
-  group_by(ID, grp = rleid(spell2)) %>%
-     filter(spell2 !=0) %>%
-      summarise(spell_length = n()) %>% 
-        mutate(Spell=seq_along(ID)) %>%
-            select(-grp)
+      group_by(ID, grp = rleid(spell2)) %>%
+        filter(spell2 !=0) %>%
+            summarise(spell_length = n()) %>% 
+                mutate(Spell=seq_along(ID)) %>%
+                  select(-grp)
 
 #Use e to start a new data set for spell start and end
 
 f<-e %>%
+  group_by(ID) %>%
+  mutate(UID=lag(UID)) %>%
   subset(spell2>0) %>%
      mutate(Wid2=lead(Wid)) %>%
        mutate(blah=ifelse(Wid+1==(Wid2), 1, 0)) %>%
@@ -88,13 +97,17 @@ f <- f %>%
       mutate(ends=lead(ends)) %>%
         group_by(ID) %>%
           distinct(spell2, .keep_all=TRUE) %>%
-             select(ID,spell,spell2,ends,starts,tenure)
+             select(ID,spell,spell2,ends,starts,tenure,UID)
 
 
 f<-merge(f,spell.time,by.x="starts",by.y="Wid")
   names(f)[which(names(f)=="period")]<-"Spell.Start"
 f<-merge(f,spell.time,by.x="ends",by.y="Wid")
   names(f)[which(names(f)=="period")]<-"Spell.Ends"
+
+#Create ID and merge with IND and OCC data  
+f$JID<-paste(f$ID,f$UID,sep="_")
+f<-merge(f, c, by="JID", all.x=TRUE)
 
 f<-f%>%
   arrange(ID,spell2) %>%
@@ -104,11 +117,16 @@ gaps<-merge(f,g,by.x=c("ID","spell2"),by.y=c("ID","Spell"),all.x=TRUE )
 gaps<-arrange(gaps,ID,spell2)
   names(gaps)[which(names(gaps)=="spell2")]<-"Spell.Num"
   
-rm(d,e,f,g,spell.time,new_data,core)
+rm(d,e,f,g,spell.time,new_data,core,c)
 
 #Final Data set
 
-gaps$event<-1
+gaps<-gaps %>%
+        mutate(event=1) %>%
+           select(-JID, -UID) %>%
+            replace_na(list(IND=0, OCC=0))
+
+
 save(gaps,file="./Build/Output/gaps97.RData")
 
 
