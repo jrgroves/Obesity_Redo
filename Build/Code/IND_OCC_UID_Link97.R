@@ -1,4 +1,6 @@
-
+#Compiles the Industry, Occupation, and Union Status for jobs to match with gaps.
+#Jeremy R. Groves
+#February 3, 2021
 
 
 rm(list=ls())
@@ -38,5 +40,22 @@ occ<- new_data %>%
 IOU<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID", "Year", "Job_Num")),
              list(uid, ind, occ))
 IOU$JID<-paste(IOU$ID, IOU$UID,sep="_")
+
+#Union Data
+
+source('./Build/Code/Union.R')
+
+union<- new_data %>%
+  rename(ID=PUBID_1997) %>%
+  pivot_longer(!ID, names_to="Year", values_to="UNION") %>%
+  mutate(Year=gsub("YEMP-101100.","",Year))  %>%
+    replace_na(list("UNION"=0))
+names(union)<-c("ID","JID2","UNION")
+IOU$JID2<-paste(IOU$Job_Num,IOU$Year,sep="_")
+
+IOU<-left_join(IOU,union)
+
+IOU$JID2<-NULL
+
 
 save(IOU,file="./Build/Input/OCC_IND.RData")
