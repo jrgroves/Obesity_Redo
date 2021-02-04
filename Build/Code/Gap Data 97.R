@@ -42,13 +42,15 @@ core <- core %>%
 
 core <- core %>%
     group_by(ID) %>%
-      mutate(tenure = cumsum(Working))
+      mutate(Exp = cumsum(Working))
+
+core <- core %>%
+   group_by(ID, UID) %>%
+       mutate(Ten = cumsum(Working))
 
 c<-IOU %>%
-   select(JID,OCC,IND,UNION)%>%
+   select(JID,OCC,IND,UNION,TERM)%>%
     distinct(JID, .keep_all = TRUE)
-
-        
 
 #Generate Spell Lengths and Start and End Dates
 
@@ -83,7 +85,8 @@ g <- e %>%
 
 f<-e %>%
   group_by(ID) %>%
-  mutate(UID=lag(UID)) %>%
+  mutate(Ten=lag(Ten),
+         UID=lag(UID)) %>%
   subset(spell2>0) %>%
      mutate(Wid2=lead(Wid)) %>%
        mutate(blah=ifelse(Wid+1==(Wid2), 1, 0)) %>%
@@ -94,11 +97,11 @@ f$starts[is.na(f$starts)]<-f$Wid[is.na(f$starts)]
 f$ends[is.na(f$ends)]<-f$Wid[is.na(f$ends)]
 
 f <- f %>%
-  subset(ends !=0 | starts !=0) %>%
+      subset(ends !=0 | starts !=0) %>%
       mutate(ends=lead(ends)) %>%
         group_by(ID) %>%
           distinct(spell2, .keep_all=TRUE) %>%
-             select(ID,spell,spell2,ends,starts,tenure,UID)
+             select(ID,spell,spell2,ends,starts,Exp,Ten,UID)
 
 
 f<-merge(f,spell.time,by.x="starts",by.y="Wid")
@@ -108,9 +111,7 @@ f<-merge(f,spell.time,by.x="ends",by.y="Wid")
 
 #Create ID and merge with IND, OCC, Union data  
 f$JID<-paste(f$ID,f$UID,sep="_")
-f<-merge(f, c, by="JID", all.x=TRUE)
-
-
+  f<-merge(f, c, by="JID", all.x=TRUE)
 
 f<-f%>%
   arrange(ID,spell2) %>%
@@ -133,7 +134,7 @@ gaps<-gaps %>%
 
 #Generate and Merge in Search Data#####
 
-source('~/Projects/Obesity_Redo/Build/Code/Search.R')
+source('~/Projects/Obesity_Redo/Build/Code/NLSY Code/Search.R')
 
 search<-new_data %>%
   rename(ID=PUBID_1997) %>%

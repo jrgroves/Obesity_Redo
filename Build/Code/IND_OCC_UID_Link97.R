@@ -7,7 +7,7 @@ rm(list=ls())
 
 library(tidyverse)
 
-source('~/Projects/Obesity_Redo/Build/Code/IND_OCC.R')
+source('~/Projects/Obesity_Redo/Build/Code/NLSY Code/OCC_IND.R')
 
 #Create the links between job id and OCC and IND
 
@@ -36,14 +36,32 @@ occ<- new_data %>%
             mutate(Year=substr(Year,4,7))%>%
               subset(!is.na(OCC))
 
+term<- new_data %>%
+      rename(ID=PUBID_1997) %>%
+        select(ID, starts_with("YEMP-58400")) %>%
+          pivot_longer(!ID, names_to="Year", values_to="TERM") %>%
+            mutate(Year=gsub("YEMP-58400.","",Year),
+                   Job_Num=substr(Year,1,2),
+                   Year=substr(Year,4,7)) %>%
+              mutate(TERM = case_when(
+                TERM == 4 ~ "Forced",
+                TERM == 22 ~ "Retired",
+                TERM == 16 | TERM == 20 ~ "Illness",
+                TERM == 14 ~ "Prison",
+                TERM < 4 ~ "Ended",
+                TERM > 4 & TERM < 14 ~ "Quit",
+                TERM == 21 ~ "Quit",
+                TERM > 22 ~ "Quit")) %>%
+                    replace_na(list(TERM="Unknown"))
+
 
 IOU<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID", "Year", "Job_Num")),
-             list(uid, ind, occ))
+             list(uid, ind, occ, term))
 IOU$JID<-paste(IOU$ID, IOU$UID,sep="_")
 
 #Union Data
 
-source('./Build/Code/Union.R')
+source('./Build/Code/NLSY Code/Union.R')
 
 union<- new_data %>%
   rename(ID=PUBID_1997) %>%

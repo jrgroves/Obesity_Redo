@@ -6,7 +6,7 @@ rm(list=ls())
 
 library(tidyverse)
 
-source('./Build/Code/Controls1.R')
+source('./Build/Code/NLSY Code/Controls1.R')
 
 core <- new_data %>%
   rename(ID=PUBID_1997) 
@@ -68,6 +68,16 @@ core.hhs<-core %>%   #Household Size
     pivot_longer(!ID, names_to="Year", values_to="HH_Size") %>%
       mutate(Year = as.numeric(gsub("HH_SIZE_","",Year))) 
 
+core.mar<- core %>%  #Marriage Status
+  select(ID, starts_with(("MARSTAT"))) %>%
+    pivot_longer(!ID, names_to="Year", values_to="Marriage") %>%
+      mutate(Year = as.numeric(gsub("MARSTAT_COLLAPSED_","",Year))) %>%
+          mutate(Marriage = case_when(
+              Marriage == 0 ~ "NeverMarried",
+              Marriage == 1 ~ "Married",
+              Marriage > 1 ~ "Seperated"
+            ))
+
 #Income Measures
 
 core.wage<-core %>%       #Individual Wage Income (by category)
@@ -86,14 +96,18 @@ core.othinc<- core %>%    #Log of Gross Family Income
     pivot_longer(!ID, names_to="Year", values_to="OTHINC") %>%
         mutate(Year = gsub("INCOME_GROSS_YR_","",Year))  %>%
           mutate(Year = as.numeric(gsub("INCOME_FAMILY_","",Year))) %>%
-            mutate(OTHINC = log(as.numeric(OTHINC)),
-                   OTHINC = ifelse(is.infinite(OTHINC),NA,OTHINC))
+            mutate(OTHINC = as.numeric(OTHINC)) 
+  #Perform the Inverse Hyperbolic Sine Transformation
+      core.othinc$OTHINC[which(core.othinc$OTHINC<0)]<-0
+      core.othinc$OTHINC<-log(core.othinc$OTHINC + sqrt(((core.othinc$OTHINC)^2)+1))
+                   
 
 
 #Combine data into core of control variables
 core.cont<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                   list(core.c6, core.cr, core.ed, core.h,
-                         core.hhs, core.wage, core.othinc, core.ur))
+                         core.hhs, core.wage, core.othinc, core.ur,
+                       core.mar))
 
 
 save(core.cont,file="./Build/OUtput/Controls97.RData")
