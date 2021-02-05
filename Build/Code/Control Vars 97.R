@@ -93,13 +93,13 @@ core.wage<-core %>%       #Individual Wage Income (by category)
 
 core.othinc<- core %>%    #Log of Gross Family Income
   select(ID, starts_with("INCOME")) %>%
-    pivot_longer(!ID, names_to="Year", values_to="OTHINC") %>%
+    pivot_longer(!ID, names_to="Year", values_to="GFinc") %>%
         mutate(Year = gsub("INCOME_GROSS_YR_","",Year))  %>%
           mutate(Year = as.numeric(gsub("INCOME_FAMILY_","",Year))) %>%
-            mutate(OTHINC = as.numeric(OTHINC)) 
+            mutate(GFinc = as.numeric(GFinc)) 
   #Perform the Inverse Hyperbolic Sine Transformation
-      core.othinc$OTHINC[which(core.othinc$OTHINC<0)]<-0
-      core.othinc$OTHINC<-log(core.othinc$OTHINC + sqrt(((core.othinc$OTHINC)^2)+1))
+      core.othinc$GFinc[which(core.othinc$GFinc<0)]<-0
+      core.othinc$GFinc<-log(core.othinc$GFinc + sqrt(((core.othinc$GFinc)^2)+1))
                    
 
 
