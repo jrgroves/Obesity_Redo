@@ -48,7 +48,8 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                           subset(!is.na(Child6)) %>%
                             subset(Race != "Mixed") %>%
                               subset(BMI_Level != "Underweight") %>%
-                                replace_na(list(TERM = "Unknown"))
+                                replace_na(list(TERM = "Unknown")) %>%
+                                  subset(TERM!="Prison")
  
   #Add Regional Unemployment Rates
   main<-merge(main,unemp,by=c("Spell.Start","Region"),all.x=TRUE)
@@ -78,7 +79,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
               NeverMarried, Seperated, Child6, LessHS,HS, SomeCol, CollegePlus, Score, 
               GFinc, White, Black, Hispanic, Good, Average, Poor, URATE, 
               UNION, NorCen, NorEst, South, West,SearchCT,Forced,Ended,Illness,
-              Prison,Quit, Unknown, Year.y)   #Mixed, Underweight
+              Quit, Unknown, Year.y)   #Mixed, Underweight
     
   
 #SUbset Data
@@ -109,8 +110,9 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
 
 #Summary Statistics for core sample
     
-    stargazer(main, subset(main, Female==0), subset(main, Female==1),
-              type="text",out="./Analysis/Output/full.txt")
+    stargazer(main, type="text",out="./Analysis/Output/full.txt")
+    
+    
     stargazer(subset(main, Female==0 & Obese==1), subset(main, Female==0 & Obese==0),
               type="text",out="./Analysis/Output/male_obese.txt")
     stargazer(subset(main, Female==1 & Obese==1), subset(main, Female==1 & Obese==0),
