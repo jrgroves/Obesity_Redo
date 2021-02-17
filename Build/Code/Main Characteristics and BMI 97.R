@@ -136,6 +136,11 @@ core.2<-core.2 %>%
 #Merge Time Constant Characteristics Keeping on ly Core.2 Values
     core<-merge(core.1,core.2,by=c("ID","Year"),all.y=TRUE)
     
+    core<-core %>%
+            group_by(ID) %>%
+              mutate(BMI_L = lag(BMI),
+                     BMI_Level_L = lag(BMI_Level))
+    
 #Save File
     save(core,file="./Build/Output/core97.RData")
       

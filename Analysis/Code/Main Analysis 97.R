@@ -59,7 +59,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
   #Create Dummies
   main <- dummy_cols(main, select_columns = c("BMI_Level","Race","Region",
                                               "Education","Health","Marriage",
-                                              "TERM"), ignore_na=TRUE)
+                                              "TERM", "BMI_Level_L"), ignore_na=TRUE)
 
   
   #Changing Variable Names and Reordering
@@ -71,15 +71,16 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
   names(main)<-gsub("Health_","", names(main))
   names(main)<-gsub("Marriage_","", names(main))
   names(main)<-gsub("TERM_","", names(main))
+  names(main)[which(names(main)=="L")]<-"BMI_Level_L"
   
   main<-main %>%
     select(-Year.x, -zW, -Education, -Health.raw, -Health, -Week, -Weight,
-           -URBAN, -Height, -TERM) %>%
+           -URBAN, -Height, -TERM, -Year.y, -L_Underweight) %>%
       relocate(ID, Spell, Normal, Overweight, Obese, Age, Married, 
               NeverMarried, Seperated, Child6, LessHS,HS, SomeCol, CollegePlus, Score, 
               GFinc, White, Black, Hispanic, Good, Average, Poor, URATE, 
               UNION, NorCen, NorEst, South, West,SearchCT,Forced,Ended,Illness,
-              Quit, Unknown, Year.y)   #Mixed, Underweight
+              Quit, Unknown, L_Normal, L_Obese, L_Overweight)   #Mixed, Underweight
     
   
 #SUbset Data
@@ -89,6 +90,11 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
        subset(Obese==0)
      main.b<-main %>%    #Black Only
        subset(Black==1)
+     main.w<-main %>%    #White Only
+       subset(White==1)
+     main.h<-main %>%    #Hispanic Only
+       subset(Hispanic==1)
+     
     
      main.m<-main %>%   #Male Only
        subset(Sex=="Male")
@@ -110,7 +116,8 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
 
 #Summary Statistics for core sample
     
-    stargazer(main, type="text",out="./Analysis/Output/full.txt")
+    stargazer(main, subset(main, Female==1), subset(main, Female==0),
+              type="text",out="./Analysis/Output/full.txt")
     
     
     stargazer(subset(main, Female==0 & Obese==1), subset(main, Female==0 & Obese==0),
@@ -120,7 +127,12 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
 
  #Translate gaps to Survival Data
     km<-with(main,Surv(Spell, event))
+    km.m<-with(main.m,Surv(Spell, event))
+    km.f<-with(main.f,Surv(Spell, event))
+    
     km.b<-with(main.b,Surv(Spell, event))
+    km.w<-with(main.w,Surv(Spell, event))
+    km.h<-with(main.h,Surv(Spell, event))
     km.o<-with(main.o, Surv(Spell, event))
     km.no<-with(main.no, Surv(Spell, event))
     
@@ -143,17 +155,39 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                           xlab = "Time in Weeks",
                           surv.median.line = "hv",
                           legend.labs = c("Normal","Obese","Overweight"),
-                          title = "Full Sample by BMI Classification",
+                          title = "Figure 1: Full Sample by BMI Classification",
                           ggtheme = theme_bw())
+      
+      km_fit2<-survfit(km.m~factor(BMI_Level),data=main.m)    
+      ggsurvplot(km_fit2, 
+                 data=main.m,
+                 conf.int=TRUE,
+                 xlim = c(0,50),
+                 xlab = "Time in Weeks",
+                 surv.median.line = "hv",
+                 legend.labs = c("Normal","Obese","Overweight"),
+                 title = "Figure 2: Male Subsample Sample by BMI Classification",
+                 ggtheme = theme_bw())
+      
+      km_fit3<-survfit(km.f~factor(BMI_Level),data=main.f)    
+      ggsurvplot(km_fit3, 
+                 data=main.f,
+                 conf.int=TRUE,
+                 xlim = c(0,50),
+                 xlab = "Time in Weeks",
+                 surv.median.line = "hv",
+                 legend.labs = c("Normal","Obese","Overweight"),
+                 title = "Figure 3: Female Subsample Sample by BMI Classification",
+                 ggtheme = theme_bw())
 
-      km_fit2<-survfit(km~factor(BMI_Level2),data=main)
+      km_fit2<-survfit(km~factor(BMI_Level_L),data=main)
       ggsurvplot(km_fit2, 
                  data=main,
                  conf.int=TRUE,
                  xlim = c(0, 50),
                  xlab = "Time in Weeks",
                  surv.median.line = "hv",
-                 legend.labs = c("Normal","Obese"),
+                 legend.labs = c("Normal","Obese", "Overweight", "Underweight"),
                  title = "Full Sample by Obesity Status",
                  ggtheme = theme_bw())
     
@@ -216,26 +250,38 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
 #Modeling
     mod1<-coxph(km~Obese+Overweight,data=main)
     mod1p<-survreg(km~Obese+Overweight,data=main, dist="weibull")
-    mod1m<-coxph(km.m~Obese+Overweight+Underweight,data=core.m)
-    mod1f<-coxph(km.f~Obese+Overweight+Underweight,data=core.f)
+    mod1l<-coxph(km~L_Obese+L_Overweight, data=main)
+    mod1.fr<-coxph(km~Obese+Overweight+frailty(ID),data=main)
     
-    mod1.fr<-coxph(km~Obese+Overweight+Underweight+frailty(ID),data=main)
-    mod1<-survreg(km~Obese+Overweight+Underweight+frailty(ID),data=main, dist="weibull")
+    mod1m<-coxph(km.m~Obese+Overweight,data=main.m)
+    mod1f<-coxph(km.f~Obese+Overweight,data=main.f)
+    
+    mod1b<-coxph(km.b~Obese+Overweight,data=main.b)
+    mod1bl<-coxph(km.b~L_Obese+L_Overweight,data=main.b)
+    
+    mod1w<-coxph(km.w~Obese+Overweight,data=main.w)
+    mod1wl<-coxph(km.w~L_Obese+L_Overweight,data=main.w)
+    
+    mod1h<-coxph(km.h~Obese+Overweight,data=main.h)
+    mod1hl<-coxph(km.h~L_Obese+L_Overweight,data=main.h)
+    
+    stargazer(mod1,mod1l,mod1f,mod1m,
+              type='text', out="./Analysis/Output/mod1.csv")
+    stargazer(mod1w,mod1wl,mod1b,mod1bl,mod1h,mod1hl,
+              type='text', out="./Analysis/Output/mod1r.csv")
+    
     mod1m.fr<-coxph(km.m~Obese+Overweight+Underweight+frailty(ID),data=core.m)
     mod1f.fr<-coxph(km.f~Obese+Overweight+Underweight+frailty(ID),data=core.f)
 
-    stargazer(mod1,mod1f,mod1m,
-              type='text', out="./Analysis/Output/mod1.csv",
-              omit.table.layout = "sn")
+   
     
-    mod2<-coxph(km~factor(BMI_Level)+Age+Married+Seperated+Black+Hispanic+Mixed+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+tenure, data=main)
-    mod2m<-coxph(km.m~factor(BMI_Level)+Age+Married+Seperated+Black+Hispanic+Mixed+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+tenure, data=core.m)
-    mod2f<-coxph(km.f~factor(BMI_Level)+Age+Married+Seperated+Black+Hispanic+Mixed+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+tenure, data=main.f)
+    mod2<-coxph(km~Obese+Overweight+Age+Married+Seperated+Black+Hispanic+
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp, data=main)
+    mod2l<-coxph(km~L_Obese+L_Overweight+Age+Married+Seperated+Black+Hispanic+
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp, data=main)
+  
     
-    stargazer(mod1,mod1f,mod1m, type='text', out="./Analysis/Output/mod1.csv")
+    stargazer(mod2,mod2l, type='text', out="./Analysis/Output/mod2.csv")
     
     
     mod3<-coxph(km~factor(BMI_Level)+Female+
