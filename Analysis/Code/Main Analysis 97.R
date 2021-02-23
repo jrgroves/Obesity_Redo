@@ -10,7 +10,7 @@ library(survival)
 library(survminer)
 library(fastDummies)
 library(stargazer)
-
+library(texreg)
 
 #Load constructed data and create core analysis data
 load("./Build/Output/gaps97.RData")
@@ -63,6 +63,9 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
 
   
   #Changing Variable Names and Reordering
+  
+  main$BMI_Level<-ordered(main$BMI_Level, c("Normal","Overweight","Obese"))
+  
   names(main)[which(names(main)=="spell_length")]<-"Spell"
   names(main)<-gsub("BMI_Level_","", names(main))
   names(main)<-gsub("Race_","", names(main))
@@ -72,6 +75,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
   names(main)<-gsub("Marriage_","", names(main))
   names(main)<-gsub("TERM_","", names(main))
   names(main)[which(names(main)=="L")]<-"BMI_Level_L"
+
   
   main<-main %>%
     select(-Year.x, -zW, -Education, -Health.raw, -Health, -Week, -Weight,
@@ -118,12 +122,10 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     
     stargazer(main, subset(main, Female==1), subset(main, Female==0),
               type="text",out="./Analysis/Output/full.txt")
-    
-    
-    stargazer(subset(main, Female==0 & Obese==1), subset(main, Female==0 & Obese==0),
-              type="text",out="./Analysis/Output/male_obese.txt")
-    stargazer(subset(main, Female==1 & Obese==1), subset(main, Female==1 & Obese==0),
-              type="text",out="./Analysis/Output/female_obese.txt")
+    stargazer(main, subset(main, Normal==1), subset(main, Overweight==1), subset(main, Obese==1),
+              type="text",out="./Analysis/Output/obesity.txt")
+    stargazer(subset(main, White==1), subset(main, Black==1), subset(main, Hispanic==1),
+              type="text",out="./Analysis/Output/race.txt")
 
  #Translate gaps to Survival Data
     km<-with(main,Surv(Spell, event))
@@ -154,7 +156,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                           xlim = c(0,50),
                           xlab = "Time in Weeks",
                           surv.median.line = "hv",
-                          legend.labs = c("Normal","Obese","Overweight"),
+                          legend.labs = c("Normal", "Overweight", "Obese"),
                           title = "Figure 1: Full Sample by BMI Classification",
                           ggtheme = theme_bw())
       
@@ -165,7 +167,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                  xlim = c(0,50),
                  xlab = "Time in Weeks",
                  surv.median.line = "hv",
-                 legend.labs = c("Normal","Obese","Overweight"),
+                 legend.labs = c("Normal", "Overweight", "Obese"),
                  title = "Figure 2: Male Subsample Sample by BMI Classification",
                  ggtheme = theme_bw())
       
@@ -176,125 +178,144 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                  xlim = c(0,50),
                  xlab = "Time in Weeks",
                  surv.median.line = "hv",
-                 legend.labs = c("Normal","Obese","Overweight"),
+                 legend.labs = c("Normal", "Overweight", "Obese"),
                  title = "Figure 3: Female Subsample Sample by BMI Classification",
                  ggtheme = theme_bw())
 
-      km_fit2<-survfit(km~factor(BMI_Level_L),data=main)
-      ggsurvplot(km_fit2, 
-                 data=main,
-                 conf.int=TRUE,
-                 xlim = c(0, 50),
-                 xlab = "Time in Weeks",
-                 surv.median.line = "hv",
-                 legend.labs = c("Normal","Obese", "Overweight", "Underweight"),
-                 title = "Full Sample by Obesity Status",
-                 ggtheme = theme_bw())
-    
-    
-      km_fit3<-survfit(km.o~factor(Sex),data=main.o)
-      ggsurvplot(km_fit3, 
-                 data=main.o,
-                 conf.int=TRUE,
-                 xlim = c(0, 50),
-                 xlab = "Time in Weeks",
-                 surv.median.line = "hv",
-                 legend.labs = c("Female","Male"),
-                 title = "Obese Subsample by Sex",
-                 ggtheme = theme_bw())
-      
-      km_fit4<-survfit(km.o~factor(Race),data=main.o)
+      km_fit4<-survfit(km.w~factor(BMI_Level),data=main.w)
       ggsurvplot(km_fit4, 
+                 data=main.w,
+                 conf.int=TRUE,
+                 xlim = c(0, 50),
+                 xlab = "Time in Weeks",
+                 surv.median.line = "hv",
+                 legend.labs = c("Normal", "Overweight", "Obese"),
+                 title = "FIgure 2: White Subsample by Obesity Status",
+                 ggtheme = theme_bw())
+      
+      
+      km_fit5<-survfit(km.b~factor(BMI_Level),data=main.b)
+      ggsurvplot(km_fit5, 
+                 data=main.b,
+                 conf.int=TRUE,
+                 xlim = c(0, 50),
+                 xlab = "Time in Weeks",
+                 surv.median.line = "hv",
+                 legend.labs = c("Normal", "Overweight", "Obese"),
+                 title = "FIgure 3: Black Subsample by Obesity Status",
+                 ggtheme = theme_bw())
+      
+      
+      km_fit6<-survfit(km.h~factor(BMI_Level),data=main.h)
+      ggsurvplot(km_fit6, 
+                 data=main.h,
+                 conf.int=TRUE,
+                 xlim = c(0, 50),
+                 xlab = "Time in Weeks",
+                 surv.median.line = "hv",
+                 legend.labs = c("Normal", "Overweight", "Obese"),
+                 title = "FIgure 4: Hispanic Subsample by Obesity Status",
+                 ggtheme = theme_bw())
+    
+    
+      km_fit7<-survfit(km.o~factor(Race),data=main.o)
+      ggsurvplot(km_fit7,
                  data=main.o,
                  conf.int=TRUE,
                  xlim = c(0, 50),
                  xlab = "Time in Weeks",
                  surv.median.line = "hv",
-                 legend.labs = c("Black","Hispanic","White"),
-                 title = "Obese Subsample by Race",
-                 ggtheme = theme_bw())
-      
-      km_fit4a<-survfit(km.no~factor(Race),data=main.no)
-      ggsurvplot(km_fit4a, 
-                 data=main.no,
-                 conf.int=TRUE,
-                 xlim = c(0, 50),
-                 xlab = "Time in Weeks",
-                 surv.median.line = "hv",
-                 legend.labs = c("Black","Hispanic","White"),
-                 title = "Non-Obese Subsample by Race",
-                 ggtheme = theme_bw())
-    
-      km_fit5<-survfit(km.fo~factor(Race),data=main.fo)
-      ggsurvplot(km_fit5, 
-                 data=main.fo,
-                 conf.int=TRUE,
-                 xlim = c(0, 50),
-                 xlab = "Time in Weeks",
-                 surv.median.line = "hv",
-                 legend.labs = c("Black","Hispanic","White"),
-                 title = "Obese Females by Race",
-                 ggtheme = theme_bw())
-      
-      km_fit6<-survfit(km.mo~factor(Race),data=main.mo)
-      ggsurvplot(km_fit6, 
-                 data=main.mo,
-                 conf.int=TRUE,
-                 xlim = c(0, 50),
-                 xlab = "Time in Weeks",
-                 surv.median.line = "hv",
-                 legend.labs = c("Black","Hispanic","White"),
-                 title = "Obese Males by Race",
-                 ggtheme = theme_bw())
+                 legend.labs = c("Black","Hispanic", "White"),
+                 title = "Figure 5: Obese Subsample by Race",
+                 ggtheme =theme_bw())
+
+      # km_fit4<-survfit(km.o~factor(Race),data=main.o)
+      # ggsurvplot(km_fit4, 
+      #            data=main.o,
+      #            conf.int=TRUE,
+      #            xlim = c(0, 50),
+      #            xlab = "Time in Weeks",
+      #            surv.median.line = "hv",
+      #            legend.labs = c("Black","Hispanic","White"),
+      #            title = "Obese Subsample by Race",
+      #            ggtheme = theme_bw())
+      # 
+      # km_fit4a<-survfit(km.no~factor(Race),data=main.no)
+      # ggsurvplot(km_fit4a, 
+      #            data=main.no,
+      #            conf.int=TRUE,
+      #            xlim = c(0, 50),
+      #            xlab = "Time in Weeks",
+      #            surv.median.line = "hv",
+      #            legend.labs = c("Black","Hispanic","White"),
+      #            title = "Non-Obese Subsample by Race",
+      #            ggtheme = theme_bw())
+      # 
+      # km_fit5<-survfit(km.fo~factor(Race),data=main.fo)
+      # ggsurvplot(km_fit5, 
+      #            data=main.fo,
+      #            conf.int=TRUE,
+      #            xlim = c(0, 50),
+      #            xlab = "Time in Weeks",
+      #            surv.median.line = "hv",
+      #            legend.labs = c("Black","Hispanic","White"),
+      #            title = "Obese Females by Race",
+      #            ggtheme = theme_bw())
+      # 
+      # km_fit6<-survfit(km.mo~factor(Race),data=main.mo)
+      # ggsurvplot(km_fit6, 
+      #            data=main.mo,
+      #            conf.int=TRUE,
+      #            xlim = c(0, 50),
+      #            xlab = "Time in Weeks",
+      #            surv.median.line = "hv",
+      #            legend.labs = c("Black","Hispanic","White"),
+      #            title = "Obese Males by Race",
+      #            ggtheme = theme_bw())
 
 #Modeling
-    mod1<-coxph(km~Obese+Overweight,data=main)
-    mod1p<-survreg(km~Obese+Overweight,data=main, dist="weibull")
-    mod1l<-coxph(km~L_Obese+L_Overweight, data=main)
-    mod1.fr<-coxph(km~Obese+Overweight+frailty(ID),data=main)
+    mod1<-coxph(km~Overweight+Obese,data=main)
+    mod1p<-survreg(km~Overweight+Obese,data=main, dist="weibull")
+    mod1l<-coxph(km~L_Overweight+L_Obese, data=main)
+    mod1.fr<-coxph(km~Overweight+Obese+frailty(ID),data=main)
     
-    mod1m<-coxph(km.m~Obese+Overweight,data=main.m)
-    mod1f<-coxph(km.f~Obese+Overweight,data=main.f)
+    htmlreg(list(mod1,mod1p,mod1l,mod1.fr), file="./Analysis/Output/Model1.html")
     
-    mod1b<-coxph(km.b~Obese+Overweight,data=main.b)
-    mod1bl<-coxph(km.b~L_Obese+L_Overweight,data=main.b)
+    mod2<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp, data=main)
+ 
+    mod2l<-coxph(km~L_Obese+L_Overweight+Female+Age+Married+Seperated+Black+Hispanic+
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp, data=main)
     
-    mod1w<-coxph(km.w~Obese+Overweight,data=main.w)
-    mod1wl<-coxph(km.w~L_Obese+L_Overweight,data=main.w)
-    
-    mod1h<-coxph(km.h~Obese+Overweight,data=main.h)
-    mod1hl<-coxph(km.h~L_Obese+L_Overweight,data=main.h)
-    
-    stargazer(mod1,mod1l,mod1f,mod1m,
-              type='text', out="./Analysis/Output/mod1.csv")
-    stargazer(mod1w,mod1wl,mod1b,mod1bl,mod1h,mod1hl,
-              type='text', out="./Analysis/Output/mod1r.csv")
-    
-    mod1m.fr<-coxph(km.m~Obese+Overweight+Underweight+frailty(ID),data=core.m)
-    mod1f.fr<-coxph(km.f~Obese+Overweight+Underweight+frailty(ID),data=core.f)
+    mod2.fr<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                    frailty(ID), data=main)
 
-   
+    mod3<-coxph(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                  Average+Poor+URATE+UNION+Forced+Ended+Illness+Quit+
+                  NorEst+South+West+SearchCT, data=main)
     
-    mod2<-coxph(km~Obese+Overweight+Age+Married+Seperated+Black+Hispanic+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp, data=main)
-    mod2l<-coxph(km~L_Obese+L_Overweight+Age+Married+Seperated+Black+Hispanic+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp, data=main)
+    mod3.fr<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                  Average+Poor+URATE+UNION+Forced+Ended+Illness+Quit+
+                  NorEst+South+West+SearchCT+frailty(ID), data=main)
+    
+    htmlreg(list(mod2,mod2l,mod2.fr,mod3,mod3.fr), file="./Analysis/Output/Model2.html")
+    
   
     
-    stargazer(mod2,mod2l, type='text', out="./Analysis/Output/mod2.csv")
+    mod4<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                  Average+Poor+URATE+UNION+Forced+Ended+Illness+Quit+
+                  NorEst+South+West+SearchCT+factor(OCC)+factor(IND), data=main)
     
-    
-    mod3<-coxph(km~factor(BMI_Level)+Female+
-                  Obese.F+Overweight.F+Underweight.F+
-                  Age+Race_Black+Race_Hispanic+
-                  Race_Mixed+Child6+GFinc+Education_HS+
-                  Education_SomeCol+Education_CollegePlus+Score+tenure+
-                  Health_Average+Health_Poor+Region_NorEst+Region_South+
-                  Region_West+UNION+URATE+SearchCT, data=main)
-    
-    mod4<-coxph(km~Obese+Overweight+Female+Age+Married+Seperated+Black+Hispanic+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Exp+Ten+
-                  Average+Poor+NorEst+South+West+UNION+URATE+SearchCT+
-                  Ended+Forced+Illness+Quit+
-                  factor(IND)+factor(OCC), data=main)
+    mod4.fr<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                     Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                     Average+Poor+URATE+UNION+Forced+Ended+Illness+Quit+
+                     NorEst+South+West+SearchCT+factor(OCC)+factor(IND)+
+                     frailty(ID), data=main)
+                  
+                  
+    htmlreg(list(mod4),omit.coef = "OCC", file="./Analysis/Output.Model4.html")
     
