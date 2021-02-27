@@ -276,46 +276,61 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
 #Modeling
     mod1<-coxph(km~Overweight+Obese,data=main)
     mod1p<-survreg(km~Overweight+Obese,data=main, dist="weibull")
+    mod1pl<-survreg(km~L_Overweight+L_Obese,data=main, dist="weibull")
     mod1l<-coxph(km~L_Overweight+L_Obese, data=main)
     mod1.fr<-coxph(km~Overweight+Obese+frailty(ID),data=main)
-    
-    htmlreg(list(mod1,mod1p,mod1l,mod1.fr), file="./Analysis/Output/Model1.html")
+    mod1p.fr<-survreg(km~Overweight+Obese+frailty(ID),data=main, dist="weibull")
+    mod1pl.fr<-survreg(km~L_Overweight+L_Obese+frailty(ID),data=main, dist="weibull")
+
+    htmlreg(list(mod1,mod1l,mod1p,mod1pl,mod1.fr, mod1p.fr,mod1pl.fr),
+            file="./Analysis/Output/Model1.html")
     
     mod2<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp, data=main)
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                  frailty(ID), data=main)
  
-    mod2l<-coxph(km~L_Obese+L_Overweight+Female+Age+Married+Seperated+Black+Hispanic+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp, data=main)
-    
-    mod2.fr<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+    mod2l<-coxph(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                    frailty(ID), data=main)
-
-    mod3<-coxph(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                  frailty(ID), data=main)
+    
+    mod2p<-survreg(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                  Average+Poor+URATE+UNION+Forced+Ended+Illness+Quit+
-                  NorEst+South+West+SearchCT, data=main)
+                  frailty(ID), data=main, dist="weibull")
     
-    mod3.fr<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                  Average+Poor+URATE+UNION+Forced+Ended+Illness+Quit+
-                  NorEst+South+West+SearchCT+frailty(ID), data=main)
-    
-    htmlreg(list(mod2,mod2l,mod2.fr,mod3,mod3.fr), file="./Analysis/Output/Model2.html")
-    
-  
-    
-    mod4<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                  Average+Poor+URATE+UNION+Forced+Ended+Illness+Quit+
-                  NorEst+South+West+SearchCT+factor(OCC)+factor(IND), data=main)
-    
-    mod4.fr<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+    mod2pl<-survreg(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
                      Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                     Average+Poor+URATE+UNION+Forced+Ended+Illness+Quit+
-                     NorEst+South+West+SearchCT+factor(OCC)+factor(IND)+
-                     frailty(ID), data=main)
-                  
-                  
-    htmlreg(list(mod4),omit.coef = "OCC", file="./Analysis/Output.Model4.html")
+                     frailty(ID), data=main, dist="weibull")
+    
+    htmlreg(list(mod2, mod2l, mod2p, mod2pl),
+            file="./Analysis/Output/Model2.html")
+    
+    mod3<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                  Average+Poor+URATE+UNION+NorCen+South+West+SearchCT+Forced+
+                  Ended+Illness+Quit+
+                  frailty(ID), data=main)
+    
+    mod3l<-coxph(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                  Average+Poor+URATE+UNION+NorCen+South+West+SearchCT+Forced+
+                  Ended+Illness+Quit+
+                  frailty(ID), data=main)
+   
+    
+    mod3fe<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                  Average+Poor+URATE+UNION+NorCen+South+West+SearchCT+Forced+
+                  Ended+Illness+Quit+factor(OCC)+factor(IND)+
+                  frailty(ID), data=main)
+    
+    mod3lfe<-coxph(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                   Average+Poor+URATE+UNION+NorCen+South+West+SearchCT+Forced+
+                   Ended+Illness+Quit+factor(OCC)+
+                   frailty(ID), data=main)
+    
+    htmlreg(list(mod3lfe),
+            file="./Analysis/Output/Model3.html",
+            omit.coef = starts_with("factor(OCC)"))
+    
     
