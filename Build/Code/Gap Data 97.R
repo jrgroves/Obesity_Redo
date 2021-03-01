@@ -49,7 +49,7 @@ core <- core %>%
        mutate(Ten = cumsum(Working))
 
 c<-IOU %>%
-   select(JID,OCC,IND,UNION,TERM)%>%
+   select(JID,OCC,IND,UNION,TERM,OCC2,IND2)%>%
     distinct(JID, .keep_all = TRUE)
 
 #Generate Spell Lengths and Start and End Dates

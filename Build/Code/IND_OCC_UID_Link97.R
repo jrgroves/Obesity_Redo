@@ -59,6 +59,53 @@ IOU<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID", "Year", "Job_Num")),
              list(uid, ind, occ, term))
 IOU$JID<-paste(IOU$ID, IOU$UID,sep="_")
 
+#Aggregate OCC and IND codes
+
+IOU<-IOU %>%
+  mutate(OCC2 = case_when(
+    OCC <= 430                   ~ "11",
+    OCC > 430 & OCC <= 730       ~ "13",
+    OCC >= 1000 & OCC <= 1240     ~ "15",
+    OCC >= 1300 & OCC <= 1560     ~ "17",
+    OCC >= 1600 & OCC <= 1960     ~ "19",
+    OCC >= 2000 & OCC <= 2060     ~ "21",
+    OCC >= 2100 & OCC <= 2150     ~ "23",
+    OCC >= 2200 & OCC <= 2550     ~ "25",
+    OCC >= 2600 & OCC <= 2960     ~ "27",
+    OCC >= 3000 & OCC <= 3650     ~ "29",
+    OCC >= 3700 & OCC <= 3950     ~ "33",
+    OCC >= 4000 & OCC <= 4160     ~ "35",
+    OCC >= 4200 & OCC <= 4250     ~ "37",
+    OCC >= 4300 & OCC <= 4650     ~ "39",
+    OCC >= 4700 & OCC <= 4960     ~ "41",
+    OCC >= 5000 & OCC <= 5930     ~ "43",
+    OCC >= 6000 & OCC <= 6130     ~ "45",
+    OCC >= 6200 & OCC <= 6940     ~ "47",
+    OCC >= 7000 & OCC <= 7620     ~ "49",
+    OCC >= 7700 & OCC <= 8960     ~ "51",
+    OCC >= 9000 & OCC <= 9750     ~ "53",
+    TRUE                          ~ "00")) %>%
+  mutate(IND2 = case_when(
+    IND >=170 & IND <= 290          ~ "AGR",
+    IND >=370 & IND <= 490          ~ "EXT",
+    IND >=570 & IND <= 690          ~ "UTL",
+    IND == 770                       ~ "CON",
+    IND >=1070 & IND <= 3990        ~ "MFG",
+    IND >=4070 & IND <= 4590        ~ "WHL",
+    IND >=4670 & IND <= 5790        ~ "RET",
+    IND >=6070 & IND <= 6390        ~ "TRN",
+    IND >=6470 & IND <= 6780        ~ "INF",
+    IND >=6870 & IND <= 7190        ~ "FIN",
+    IND >=7270 & IND <= 7790        ~ "PRF",
+    IND >=7860 & IND <= 7890        ~ "EDU",
+    IND >=7970 & IND <= 8290        ~ "MED",
+    IND >=8370 & IND <= 8470        ~ "SCA",
+    IND >=8560 & IND <= 8690        ~ "ENT",
+    IND >=8770 & IND <= 9290        ~ "SRV",
+    IND >=9370 & IND <= 9590        ~ "ADM",
+    IND >=9670 & IND <= 9890        ~ "ARM",
+    TRUE                            ~ "OTH"))
+
 #Union Data
 
 source('./Build/Code/NLSY Code/Union.R')

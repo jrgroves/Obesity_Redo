@@ -84,7 +84,8 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
               NeverMarried, Seperated, Child6, LessHS,HS, SomeCol, CollegePlus, Score, 
               GFinc, White, Black, Hispanic, Good, Average, Poor, URATE, 
               UNION, NorCen, NorEst, South, West,SearchCT,Forced,Ended,Illness,
-              Quit, Unknown, L_Normal, L_Obese, L_Overweight)   #Mixed, Underweight
+              Quit, Unknown, L_Normal, L_Obese, L_Overweight) %>%
+    replace_na(list(OCC2 = "00", IND2 = "OTH"))
     
   
 #SUbset Data
@@ -320,16 +321,16 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     mod3fe<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
                   Average+Poor+URATE+UNION+NorCen+South+West+SearchCT+Forced+
-                  Ended+Illness+Quit+factor(OCC)+factor(IND)+
+                  Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
                   frailty(ID), data=main)
     
     mod3lfe<-coxph(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
                    Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
                    Average+Poor+URATE+UNION+NorCen+South+West+SearchCT+Forced+
-                   Ended+Illness+Quit+factor(OCC)+
+                   Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
                    frailty(ID), data=main)
     
-    htmlreg(list(mod3lfe),
+    htmlreg(list(mod3, mod3l, mod3fe, mod3lfe),
             file="./Analysis/Output/Model3.html",
             omit.coef = starts_with("factor(OCC)"))
     
