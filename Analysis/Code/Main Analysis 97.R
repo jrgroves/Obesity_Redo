@@ -7,10 +7,10 @@ rm(list=ls())
 
 library(tidyverse)
 library(survival)
-library(survminer)
 library(fastDummies)
 library(stargazer)
 library(texreg)
+library(survminer)
 
 #Load constructed data and create core analysis data
 load("./Build/Output/gaps97.RData")
@@ -283,55 +283,111 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     mod1p.fr<-survreg(km~Overweight+Obese+frailty(ID),data=main, dist="weibull")
     mod1pl.fr<-survreg(km~L_Overweight+L_Obese+frailty(ID),data=main, dist="weibull")
 
-    htmlreg(list(mod1,mod1l,mod1p,mod1pl,mod1.fr, mod1p.fr,mod1pl.fr),
+    htmlreg(list(mod1,mod1l,mod1.fr, mod1p, mod1pl, mod1p.fr,mod1pl.fr),
+            digist = 4,
+            custom.model.names = c("CoxPH","CoxPH-Lagged","CoxPH - Frailty","Weibutll - AFT",
+                                   "AFT - Lagged","AFT - Frailty",
+                                   "AFT-Lagged-Frailty"),
             file="./Analysis/Output/Model1.html")
     
     mod2<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                  Average+Poor+NorCen+South+West+
                   frailty(ID), data=main)
  
     mod2l<-coxph(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                   Average+Poor+NorCen+South+West+
                   frailty(ID), data=main)
     
     mod2p<-survreg(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                    Average+Poor+NorCen+South+West+
                   frailty(ID), data=main, dist="weibull")
     
     mod2pl<-survreg(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
                      Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                      Average+Poor+NorCen+South+West+
                      frailty(ID), data=main, dist="weibull")
     
     htmlreg(list(mod2, mod2l, mod2p, mod2pl),
+            digits = 4,
+            custom.model.names = c("CoxPH","CoxPH - Lagged","AFT","AFT - Lagged"),
             file="./Analysis/Output/Model2.html")
     
-    mod3<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+    mod3<-survreg(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                  Average+Poor+URATE+UNION+NorCen+South+West+SearchCT+Forced+
+                  Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
                   Ended+Illness+Quit+
-                  frailty(ID), data=main)
+                  frailty(ID), data=main, dist="weibull")
     
-    mod3l<-coxph(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
+    mod3l<-survreg(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                  Average+Poor+URATE+UNION+NorCen+South+West+SearchCT+Forced+
+                  Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
                   Ended+Illness+Quit+
-                  frailty(ID), data=main)
+                  frailty(ID), data=main, dist="weibull")
    
     
     mod3fe<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                  Average+Poor+URATE+UNION+NorCen+South+West+SearchCT+Forced+
+                  Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
                   Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
                   frailty(ID), data=main)
     
-    mod3lfe<-coxph(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
-                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                   Average+Poor+URATE+UNION+NorCen+South+West+SearchCT+Forced+
-                   Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
-                   frailty(ID), data=main)
+    mod3pfe<-survreg(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                    Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                    Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
+                    Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
+                    frailty(ID), data=main, dist="weibull")
     
-    htmlreg(list(mod3, mod3l, mod3fe, mod3lfe),
+    mod3plfe<-survreg(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
+                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                   Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
+                   Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
+                   frailty(ID), data=main, dist="weibull")
+    
+    htmlreg(list(mod3, mod3l, mod3fe, mod3pfe, mod3plfe),
             file="./Analysis/Output/Model3.html",
-            omit.coef = starts_with("factor(OCC)"))
+            digits = 4,
+            custom.model.names = c("AFT", "AFT_Lagged","CoxPH_FE","AFT_FE","AFT_FE_Lagged"),
+            omit.coef = "factor")
+    
+#Breakdown by sex    
+    main$FOV<-main$Female*main$Overweight
+    main$FOB<-main$Female*main$Obese
+    main$MOV<-(1-main$Female)*main$Overweight
+    main$MOB<-(1-main$Female)*main$Obese
+    main$FNO<-main$Female*main$Normal
+    
+    mod4s<-survreg(km~FNO+FOV+FOB+MOV+MOB+Age+Married+Seperated+Black+Hispanic+
+                       Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                       Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
+                       Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
+                       frailty(ID), data=main, dist="weibull")
+    
+#Breakdown by Race
+    main$WNO<-main$White*main$Normal
+    main$WOV<-main$White*main$Overweight
+    main$WOB<-main$White*main$Obese
+    main$HNO<-main$Hispanic*main$Normal
+    main$HOV<-main$Hispanic*main$Overweight
+    main$HOB<-main$Hispanic*main$Obese
+    main$BNO<-main$Black*main$Normal
+    main$BOV<-main$Black*main$Overweight
+    main$BOB<-main$Black*main$Obese
+    
+    mod4r<-survreg(km~WOV+WOB+HNO+HOV+HOB+BNO+BOV+BOB+Female+Age+Married+Seperated+
+                     Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                     Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
+                     Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
+                     frailty(ID), data=main, dist="weibull")
+    
+    htmlreg(list(mod4s, mod4r),
+            file="./Analysis/Output/Model4.html",
+            digits = 4,
+            custom.model.names = c("Sex Interactions","Race Interaction"),
+            caption = "Table 4: Characteristic Subsets",
+            caption.above = TRUE,
+            omit.coef = "factor")
     
     
