@@ -75,7 +75,7 @@ core.mar<- core %>%  #Marriage Status
           mutate(Marriage = case_when(
               Marriage == 0 ~ "NeverMarried",
               Marriage == 1 ~ "Married",
-              Marriage > 1 ~ "Seperated"
+              Marriage > 1 ~ "Separated"
             ))
 
 #Income Measures

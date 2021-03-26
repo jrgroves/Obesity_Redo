@@ -81,7 +81,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     select(-Year.x, -zW, -Education, -Health.raw, -Health, -Week, -Weight,
            -URBAN, -Height, -TERM, -Year.y, -L_Underweight) %>%
       relocate(ID, Spell, Normal, Overweight, Obese, Age, Married, 
-              NeverMarried, Seperated, Child6, LessHS,HS, SomeCol, CollegePlus, Score, 
+              NeverMarried, Separated, Child6, LessHS,HS, SomeCol, CollegePlus, Score, 
               GFinc, White, Black, Hispanic, Good, Average, Poor, URATE, 
               UNION, NorCen, NorEst, South, West,SearchCT,Forced,Ended,Illness,
               Quit, Unknown, L_Normal, L_Obese, L_Overweight) %>%
@@ -191,7 +191,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                  xlab = "Time in Weeks",
                  surv.median.line = "hv",
                  legend.labs = c("Normal", "Overweight", "Obese"),
-                 title = "FIgure 2: White Subsample by Obesity Status",
+                 title = "FIgure 4: White Subsample by Obesity Status",
                  ggtheme = theme_bw())
       
       
@@ -203,7 +203,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                  xlab = "Time in Weeks",
                  surv.median.line = "hv",
                  legend.labs = c("Normal", "Overweight", "Obese"),
-                 title = "FIgure 3: Black Subsample by Obesity Status",
+                 title = "FIgure 5: Black Subsample by Obesity Status",
                  ggtheme = theme_bw())
       
       
@@ -215,7 +215,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                  xlab = "Time in Weeks",
                  surv.median.line = "hv",
                  legend.labs = c("Normal", "Overweight", "Obese"),
-                 title = "FIgure 4: Hispanic Subsample by Obesity Status",
+                 title = "FIgure 6: Hispanic Subsample by Obesity Status",
                  ggtheme = theme_bw())
     
     
@@ -227,52 +227,19 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                  xlab = "Time in Weeks",
                  surv.median.line = "hv",
                  legend.labs = c("Black","Hispanic", "White"),
-                 title = "Figure 5: Obese Subsample by Race",
+                 title = "Figure 7: Obese Subsample by Race",
                  ggtheme =theme_bw())
 
-      # km_fit4<-survfit(km.o~factor(Race),data=main.o)
-      # ggsurvplot(km_fit4, 
-      #            data=main.o,
-      #            conf.int=TRUE,
-      #            xlim = c(0, 50),
-      #            xlab = "Time in Weeks",
-      #            surv.median.line = "hv",
-      #            legend.labs = c("Black","Hispanic","White"),
-      #            title = "Obese Subsample by Race",
-      #            ggtheme = theme_bw())
-      # 
-      # km_fit4a<-survfit(km.no~factor(Race),data=main.no)
-      # ggsurvplot(km_fit4a, 
-      #            data=main.no,
-      #            conf.int=TRUE,
-      #            xlim = c(0, 50),
-      #            xlab = "Time in Weeks",
-      #            surv.median.line = "hv",
-      #            legend.labs = c("Black","Hispanic","White"),
-      #            title = "Non-Obese Subsample by Race",
-      #            ggtheme = theme_bw())
-      # 
-      # km_fit5<-survfit(km.fo~factor(Race),data=main.fo)
-      # ggsurvplot(km_fit5, 
-      #            data=main.fo,
-      #            conf.int=TRUE,
-      #            xlim = c(0, 50),
-      #            xlab = "Time in Weeks",
-      #            surv.median.line = "hv",
-      #            legend.labs = c("Black","Hispanic","White"),
-      #            title = "Obese Females by Race",
-      #            ggtheme = theme_bw())
-      # 
-      # km_fit6<-survfit(km.mo~factor(Race),data=main.mo)
-      # ggsurvplot(km_fit6, 
-      #            data=main.mo,
-      #            conf.int=TRUE,
-      #            xlim = c(0, 50),
-      #            xlab = "Time in Weeks",
-      #            surv.median.line = "hv",
-      #            legend.labs = c("Black","Hispanic","White"),
-      #            title = "Obese Males by Race",
-      #            ggtheme = theme_bw())
+      km_fit8<-survfit(km.o~factor(Sex),data=main.o)
+      ggsurvplot(km_fit8,
+                 data=main.o,
+                 conf.int=TRUE,
+                 xlim = c(0, 50),
+                 xlab = "Time in Weeks",
+                 surv.median.line = "hv",
+                 legend.labs = c("Male","Female"),
+                 title = "Figure 8: Obese Subsample by Sex",
+                 ggtheme = theme_bw())
 
 #Modeling
     mod1<-coxph(km~Overweight+Obese,data=main)
@@ -290,102 +257,140 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                                    "AFT-Lagged-Frailty"),
             file="./Analysis/Output/Model1.html")
     
-    mod2<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                  Average+Poor+NorCen+South+West+
-                  frailty(ID), data=main)
- 
-    mod2l<-coxph(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                   Average+Poor+NorCen+South+West+
-                  frailty(ID), data=main)
+    # mod2<-coxph(km~Overweight+Obese+Female+Age+Married+Separated+Black+Hispanic+
+    #               Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+    #               Average+Poor+NorCen+South+West+
+    #               frailty(ID), data=main)
+    # 
+    # mod2l<-coxph(km~L_Overweight+L_Obese+Female+Age+Married+Separated+Black+Hispanic+
+    #               Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+    #                Average+Poor+NorCen+South+West+
+    #               frailty(ID), data=main)
     
-    mod2p<-survreg(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+    mod2p<-survreg(km~Overweight+Obese+Female+Age+Married+Separated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
                     Average+Poor+NorCen+South+West+
                   frailty(ID), data=main, dist="weibull")
     
-    mod2pl<-survreg(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
+    mod2pl<-survreg(km~L_Overweight+L_Obese+Female+Age+Married+Separated+Black+Hispanic+
                      Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
                       Average+Poor+NorCen+South+West+
                      frailty(ID), data=main, dist="weibull")
     
-    htmlreg(list(mod2, mod2l, mod2p, mod2pl),
-            digits = 4,
-            custom.model.names = c("CoxPH","CoxPH - Lagged","AFT","AFT - Lagged"),
-            file="./Analysis/Output/Model2.html")
+    # htmlreg(list(mod2, mod2l, mod2p, mod2pl),
+    #         digits = 4,
+    #         custom.model.names = c("CoxPH","CoxPH - Lagged","AFT","AFT - Lagged"),
+    #         file="./Analysis/Output/Model2.html")
     
-    mod3<-survreg(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+    mod3<-survreg(km~Overweight+Obese+Female+Age+Married+Separated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
                   Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
                   Ended+Illness+Quit+
                   frailty(ID), data=main, dist="weibull")
     
-    mod3l<-survreg(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
+    mod3l<-survreg(km~L_Overweight+L_Obese+Female+Age+Married+Separated+Black+Hispanic+
                   Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
                   Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
                   Ended+Illness+Quit+
                   frailty(ID), data=main, dist="weibull")
    
     
-    mod3fe<-coxph(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
-                  Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
-                  Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
-                  Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
-                  frailty(ID), data=main)
+    # mod3fe<-coxph(km~Overweight+Obese+Female+Age+Married+Separated+Black+Hispanic+
+    #               Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+    #               Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
+    #               Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
+    #               frailty(ID), data=main)
     
-    mod3pfe<-survreg(km~Overweight+Obese+Female+Age+Married+Seperated+Black+Hispanic+
+    mod3pfe<-survreg(km~Overweight+Obese+Female+Age+Married+Separated+Black+Hispanic+
                     Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
                     Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
                     Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
                     frailty(ID), data=main, dist="weibull")
     
-    mod3plfe<-survreg(km~L_Overweight+L_Obese+Female+Age+Married+Seperated+Black+Hispanic+
+    mod3plfe<-survreg(km~L_Overweight+L_Obese+Female+Age+Married+Separated+Black+Hispanic+
                    Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
                    Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
                    Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
                    frailty(ID), data=main, dist="weibull")
     
-    htmlreg(list(mod3, mod3l, mod3fe, mod3pfe, mod3plfe),
-            file="./Analysis/Output/Model3.html",
+    # htmlreg(list(mod3, mod3l, mod3fe, mod3pfe, mod3plfe),
+    #         file="./Analysis/Output/Model3.html",
+    #         digits = 4,
+    #         custom.model.names = c("AFT", "AFT_Lagged","CoxPH_FE","AFT_FE","AFT_FE_Lagged"),
+    #         omit.coef = "factor")
+    
+    htmlreg(list(mod2p, mod2pl, mod3, mod3l, mod3pfe, mod3plfe),
+            file="./Analysis/Output/Model2.html",
             digits = 4,
-            custom.model.names = c("AFT", "AFT_Lagged","CoxPH_FE","AFT_FE","AFT_FE_Lagged"),
             omit.coef = "factor")
     
 #Breakdown by sex    
-    main$FOV<-main$Female*main$Overweight
-    main$FOB<-main$Female*main$Obese
-    main$MOV<-(1-main$Female)*main$Overweight
-    main$MOB<-(1-main$Female)*main$Obese
-    main$FNO<-main$Female*main$Normal
+    main$FOV<-main$Female*main$L_Overweight
+    main$FOB<-main$Female*main$L_Obese
+    main$MOV<-(1-main$Female)*main$L_Overweight
+    main$MOB<-(1-main$Female)*main$L_Obese
+    main$FNO<-main$Female*main$L_Normal
     
-    mod4s<-survreg(km~FNO+FOV+FOB+MOV+MOB+Age+Married+Seperated+Black+Hispanic+
+    mod4s<-survreg(km~FNO+FOV+FOB+MOV+MOB+Age+Married+Separated+Black+Hispanic+
                        Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
                        Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
                        Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
                        frailty(ID), data=main, dist="weibull")
     
 #Breakdown by Race
-    main$WNO<-main$White*main$Normal
-    main$WOV<-main$White*main$Overweight
-    main$WOB<-main$White*main$Obese
-    main$HNO<-main$Hispanic*main$Normal
-    main$HOV<-main$Hispanic*main$Overweight
-    main$HOB<-main$Hispanic*main$Obese
-    main$BNO<-main$Black*main$Normal
-    main$BOV<-main$Black*main$Overweight
-    main$BOB<-main$Black*main$Obese
+    main$WNO<-main$White*main$L_Normal
+    main$WOV<-main$White*main$L_Overweight
+    main$WOB<-main$White*main$L_Obese
+    main$HNO<-main$Hispanic*main$L_Normal
+    main$HOV<-main$Hispanic*main$L_Overweight
+    main$HOB<-main$Hispanic*main$L_Obese
+    main$BNO<-main$Black*main$L_Normal
+    main$BOV<-main$Black*main$L_Overweight
+    main$BOB<-main$Black*main$L_Obese
     
-    mod4r<-survreg(km~WOV+WOB+HNO+HOV+HOB+BNO+BOV+BOB+Female+Age+Married+Seperated+
+    mod4r<-survreg(km~WOV+WOB+HNO+HOV+HOB+BNO+BOV+BOB+Female+Age+Married+Separated+
                      Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
                      Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
                      Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
                      frailty(ID), data=main, dist="weibull")
     
-    htmlreg(list(mod4s, mod4r),
+    
+    #Breakdown by Race and sex
+    
+    main$WNOM<-main$White*main$L_Normal*(1-main$Female)
+    main$WOVM<-main$White*main$L_Overweight*(1-main$Female)
+    main$WOBM<-main$White*main$L_Obese*(1-main$Female)
+    main$WNOF<-main$White*main$L_Normal*(main$Female)
+    main$WOVF<-main$White*main$L_Overweight*(main$Female)
+    main$WOBF<-main$White*main$L_Obese*(main$Female)
+    
+    main$BNOM<-main$Black*main$L_Normal*(1-main$Female)
+    main$BOVM<-main$Black*main$L_Overweight*(1-main$Female)
+    main$BOBM<-main$Black*main$L_Obese*(1-main$Female)
+    main$BNOF<-main$Black*main$L_Normal*(main$Female)
+    main$BOVF<-main$Black*main$L_Overweight*(main$Female)
+    main$BOBF<-main$Black*main$L_Obese*(main$Female)
+    
+    main$HNOM<-main$Hispanic*main$L_Normal*(1-main$Female)
+    main$HOVM<-main$Hispanic*main$L_Overweight*(1-main$Female)
+    main$HOBM<-main$Hispanic*main$L_Obese*(1-main$Female)
+    main$HNOF<-main$Hispanic*main$L_Normal*(main$Female)
+    main$HOVF<-main$Hispanic*main$L_Overweight*(main$Female)
+    main$HOBF<-main$Hispanic*main$L_Obese*(main$Female)
+    
+    mod4rs<-survreg(km~WOVM+WOBM+WNOF+WOVF+WOBF+
+                       BNOM+BOVM+BOBM+BNOF+BOVF+BOBF+
+                       HNOM+HOVM+HOBM+HNOF+HOVF+HOBF+
+                      Age+Married+Separated+
+                     Child6+GFinc+HS+SomeCol+CollegePlus+Score+Ten+Exp+
+                     Average+Poor+NorCen+South+West+URATE+UNION+SearchCT+Forced+
+                     Ended+Illness+Quit+factor(OCC2)+factor(IND2)+
+                     frailty(ID), data=main, dist="weibull")
+    
+    htmlreg(list(mod4s, mod4r, mod4rs),
             file="./Analysis/Output/Model4.html",
             digits = 4,
-            custom.model.names = c("Sex Interactions","Race Interaction"),
+            custom.model.names = c("Sex Interactions","Race Interaction","Sex-Race Interaction"),
             caption = "Table 4: Characteristic Subsets",
             caption.above = TRUE,
             omit.coef = "factor")
