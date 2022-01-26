@@ -123,7 +123,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     mod1L<-coxph(Surv(Spell, event)~BMI_Level_L, data=subset(main, !is.na(BMI_Level_L)))
     
     mod1.fr<-coxme(Surv(Spell, event)~BMI_Level+(1|ID), data=main)
-    mod1.frL<-coxme(Surv(Spell, event)~BMI_Level_L+(1|ID), data=subset(main, !is.na(BMI_Level_L)))
+    mod1L.fr<-coxme(Surv(Spell, event)~BMI_Level_L+(1|ID), data=subset(main, !is.na(BMI_Level_L)))
     
     #Addition of individual specific elements
     
@@ -161,7 +161,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     save(mod1,mod1L, mod1.fr, mod1L.fr, mod2, mod2.fr, mod3, mod3.fr,mod4, mod4.fr,
          file="fullmod.RData")
     
-#Analaysis by Sex####
+#Analysis by Sex####
     
     submain<-main %>%
       subset(Sex=="Female")
@@ -170,7 +170,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     mod1L<-coxph(Surv(Spell, event)~BMI_Level_L, data=subset(submain, !is.na(BMI_Level_L)))
     
     mod1.fr<-coxme(Surv(Spell, event)~BMI_Level+(1|ID), data=submain)
-    mod1.frL<-coxme(Surv(Spell, event)~BMI_Level_L+(1|ID), data=subset(submain, !is.na(BMI_Level_L)))
+    mod1L.fr<-coxme(Surv(Spell, event)~BMI_Level_L+(1|ID), data=subset(submain, !is.na(BMI_Level_L)))
     
     #Addition of individual specific elements
     
@@ -179,8 +179,11 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                 data=submain)
     
     mod2.fr<-coxme(Surv(Spell, event)~BMI_Level+Race+Marriage+Education+
-                     Age+Child6+GFinc+Score+Ten+Exp+Health+Region+(1|ID),
-                   data=submain)
+                                      Age+Child6+GFinc+Score+Ten+Exp+Health+Region+(1|ID),
+                                      data=submain)
+    mod2.fr.int<-coxme(Surv(Spell, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+
+                                          Age+Child6+GFinc+Score+Ten+Exp+Health+Region+(1|ID),
+                                          data=submain)
     
     #Addition of Industry, Occupation, and Economy
     
@@ -195,6 +198,11 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                      URATE+SearchCT+Term+(1|ID),
                    data=submain)
     
+    mod3.fr.int<-coxme(Surv(Spell, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+
+                     Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
+                     URATE+SearchCT+Term+(1|ID),
+                   data=submain)
+    
     mod4<-coxph(Surv(Spell, event)~BMI_Level+Race+Marriage+Education+
                   Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
                   URATE+SearchCT+Term+OCC2+IND2,
@@ -205,7 +213,13 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                      URATE+SearchCT+Term+OCC2+IND2+(1|ID),
                    data=submain)
     
-    save(mod1,mod1L, mod1.fr, mod1L.fr, mod2, mod2.fr, mod3, mod3.fr, mod4, mod4.fr,
+    mod4.fr.int<-coxme(Surv(Spell, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+
+                     Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
+                     URATE+SearchCT+Term+OCC2+IND2+(1|ID),
+                   data=submain)
+    
+    save(mod1,mod1L, mod1.fr, mod1L.fr, mod2, mod2.fr,mod2.fr.int, mod3, mod3.fr,
+         mod3.fr.int, mod4, mod4.fr, mod4.fr.int,
          file="femalemod.RData")
     
     submain<-main %>%
@@ -215,7 +229,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     mod1L<-coxph(Surv(Spell, event)~BMI_Level_L, data=subset(submain, !is.na(BMI_Level_L)))
     
     mod1.fr<-coxme(Surv(Spell, event)~BMI_Level+(1|ID), data=submain)
-    mod1.frL<-coxme(Surv(Spell, event)~BMI_Level_L+(1|ID), data=subset(submain, !is.na(BMI_Level_L)))
+    mod1L.fr<-coxme(Surv(Spell, event)~BMI_Level_L+(1|ID), data=subset(submain, !is.na(BMI_Level_L)))
     
     #Addition of individual specific elements
     
@@ -226,6 +240,10 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     mod2.fr<-coxme(Surv(Spell, event)~BMI_Level+Race+Marriage+Education+
                      Age+Child6+GFinc+Score+Ten+Exp+Health+Region+(1|ID),
                    data=submain)
+    
+    mod2.fr.int<-coxme(Surv(Spell, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+
+                         Age+Child6+GFinc+Score+Ten+Exp+Health+Region+(1|ID),
+                       data=submain)
     
     #Addition of Industry, Occupation, and Economy
     
@@ -240,6 +258,11 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                      URATE+SearchCT+Term+(1|ID),
                    data=submain)
     
+    mod3.fr.int<-coxme(Surv(Spell, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+
+                         Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
+                         URATE+SearchCT+Term+(1|ID),
+                       data=submain)
+    
     mod4<-coxph(Surv(Spell, event)~BMI_Level+Race+Marriage+Education+
                   Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
                   URATE+SearchCT+Term+OCC2+IND2,
@@ -250,6 +273,11 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                      URATE+SearchCT+Term+OCC2+IND2+(1|ID),
                    data=submain)
     
-    save(mod1,mod1L, mod1.fr, mod1L.fr, mod2, mod2.fr, mod3, mod3.fr,mod4, mod4.fr,
+    mod4.fr.int<-coxme(Surv(Spell, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+
+                         Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
+                         URATE+SearchCT+Term+OCC2+IND2+(1|ID),
+                       data=submain)
+    
+    save(mod1,mod1L, mod1.fr, mod1L.fr, mod2, mod2.fr,mod2.fr.int, mod3, mod3.fr,
+         mod3.fr.int, mod4, mod4.fr, mod4.fr.int,
          file="malemod.RData")
-   
