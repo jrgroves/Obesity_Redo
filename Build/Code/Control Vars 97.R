@@ -44,17 +44,19 @@ core.ur <- core %>%    #Urban or Rural
                    URBAN = ifelse(URBAN==2,NA,URBAN))
   
 #Education
+#Recoded on Jan 26, 2022 to better split education
 
 core.ed<-core %>%   #Current Enrollment
   select(ID,starts_with("ENROLLSTAT")) %>%
     pivot_longer(!ID, names_to="Year", values_to="Education") %>%
       mutate(Year=(gsub("EDT_","",Year))) %>%
-        mutate(Year = as.numeric(gsub("ENROLLSTAT_","",Year))) %>%
+        mutate(Year = as.numeric(gsub("ENROLLSTAT_","",Year)))%>%
           mutate(Education = case_when(
-            Education == 1 ~ "LessHS",
+            Education == 1 | Education == 8 ~ "LessHS",
             Education == 2 | Education == 3 ~ "HS",
-            Education == 4 | Education == 5 ~ "SomeCol",
-            Education > 5 ~ "CollegePlus"))
+            Education == 4 | Education == 9 | Education  == 10 ~ "SomeCol",
+            Education == 5 | Education == 6 ~ "CollegeGrad",
+            Education == 7 | Education == 11 ~ "CollegePlus"))
 
 #Household Makeup
 

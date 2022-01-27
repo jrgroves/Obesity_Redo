@@ -52,7 +52,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                             subset(Race != "Mixed") %>%
                               subset(BMI_Level != "Underweight") %>%
                                 replace_na(list(TERM = "Unknown")) %>%
-                                  subset(TERM!="Prison")
+                                 subset(TERM!="Prison")
                                   
  
   #Add Regional Unemployment Rates
@@ -105,7 +105,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
   h<-as.data.frame(model.matrix(~Term - 1, data=main))
   
   sumfac<-main %>%
-    select(Spell, BMI, Age, Child6, HH_Size, GFinc, URATE,
+    select(ID,Spell, BMI, Age, Child6, HH_Size, GFinc, URATE,
            Score,SearchCT, Ten, Exp, UNION)
   sumfac<-cbind(sumfac,a,b,c,d,e,f,g,h)
   
@@ -117,7 +117,52 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
   stargazer(subset(sumfac, RaceWhite==1), subset(sumfac, RaceBlack==1), subset(sumfac, RaceHispanic==1),
             type="text",out="./Analysis/Output/race.txt")
   
- 
+#K-M Nonparameter Curve Graphs
+  
+  fit <- survfit(Surv(Spell, event) ~ BMI_Level, data = main)
+  ggsurvplot(fit, 
+             data=main, 
+             conf.int = TRUE,
+             conf.int.style = "step",
+             xlim = c(0, 30),
+             xlab = "Time in weeks",
+             break.time.by = 2,
+             surv.median.line = "hv",
+             legend.labs = c("Normal", "Overweight", "Obese"),
+             title = "Figure 1:K-M Survival by BMI Level",
+             palette = "grey",
+             theme = theme_bw())
+  
+  fit <- survfit(Surv(Spell, event) ~ BMI_Level, data = subset(main, Sex=="Female"))
+  ggsurvplot(fit, 
+             data=subset(main, Sex=="Female"), 
+             conf.int = TRUE,
+             conf.int.style = "step",
+             xlim = c(0, 30),
+             xlab = "Time in weeks",
+             break.time.by = 2,
+             surv.median.line = "hv",
+             legend.labs = c("Normal", "Overweight", "Obese"),
+             title = "Figure 2:K-M Survival for Females by BMI Level",
+             palette = "grey",
+             theme = theme_bw())
+  
+  fit <- survfit(Surv(Spell, event) ~ BMI_Level, data = subset(main, Sex=="Male"))
+  ggsurvplot(fit, 
+             data=subset(main, Sex=="Male"), 
+             conf.int = TRUE,
+             conf.int.style = "step",
+             xlim = c(0, 30),
+             xlab = "Time in weeks",
+             break.time.by = 2,
+             surv.median.line = "hv",
+             legend.labs = c("Normal", "Overweight", "Obese"),
+             title = "Figure 3:K-M Survival for Males by BMI Level",
+             palette = "grey",
+             theme = theme_bw())
+  
+
+  
 #Modeling
     mod1<-coxph(Surv(Spell, event)~BMI_Level, data=main)
     mod1L<-coxph(Surv(Spell, event)~BMI_Level_L, data=subset(main, !is.na(BMI_Level_L)))
