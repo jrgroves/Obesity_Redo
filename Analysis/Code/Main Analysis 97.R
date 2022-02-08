@@ -195,16 +195,16 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     
     mod4<-coxph(Surv(Spell, event)~BMI_Level+Sex+Race+Marriage+Education+
                   Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
-                  URATE+SearchCT+Term+OCC2+IND2,
+                  URATE+SearchCT+Term+UNION+OCC2+IND2,
                 data=main)
     
     mod4.fr<-coxme(Surv(Spell, event)~BMI_Level+Sex+Race+Marriage+Education+
                      Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
-                     URATE+SearchCT+Term+OCC2+IND2+(1|ID),
+                     URATE+SearchCT+Term+UNION+OCC2+IND2+(1|ID),
                    data=main)
     
     save(mod1,mod1L, mod1.fr, mod1L.fr, mod2, mod2.fr, mod3, mod3.fr,mod4, mod4.fr,
-         file="fullmod.RData")
+         file="./Analysis/Output/fullmod.RData")
     
 #Analysis by Sex####
     
@@ -250,22 +250,22 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     
     mod4<-coxph(Surv(Spell, event)~BMI_Level+Race+Marriage+Education+
                   Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
-                  URATE+SearchCT+Term+OCC2+IND2,
+                  URATE+SearchCT+Term+UNION+OCC2+IND2,
                 data=submain)
     
     mod4.fr<-coxme(Surv(Spell, event)~BMI_Level+Race+Marriage+Education+
                      Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
-                     URATE+SearchCT+Term+OCC2+IND2+(1|ID),
+                     URATE+SearchCT+Term+UNION+OCC2+IND2+(1|ID),
                    data=submain)
     
     mod4.fr.int<-coxme(Surv(Spell, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+
                      Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
-                     URATE+SearchCT+Term+OCC2+IND2+(1|ID),
+                     URATE+SearchCT+Term+UNION+OCC2+IND2+(1|ID),
                    data=submain)
     
     save(mod1,mod1L, mod1.fr, mod1L.fr, mod2, mod2.fr,mod2.fr.int, mod3, mod3.fr,
          mod3.fr.int, mod4, mod4.fr, mod4.fr.int,
-         file="femalemod.RData")
+         file="./Analysis/Output/femalemod.RData")
     
     submain<-main %>%
       subset(Sex=="Male")
@@ -310,19 +310,19 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     
     mod4<-coxph(Surv(Spell, event)~BMI_Level+Race+Marriage+Education+
                   Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
-                  URATE+SearchCT+Term+OCC2+IND2,
+                  URATE+SearchCT+Term+UNION+OCC2+IND2,
                 data=submain)
     
     mod4.fr<-coxme(Surv(Spell, event)~BMI_Level+Race+Marriage+Education+
                      Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
-                     URATE+SearchCT+Term+OCC2+IND2+(1|ID),
+                     URATE+SearchCT+Term+UNION+OCC2+IND2+(1|ID),
                    data=submain)
     
     mod4.fr.int<-coxme(Surv(Spell, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+
                          Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
-                         URATE+SearchCT+Term+OCC2+IND2+(1|ID),
+                         URATE+SearchCT+Term+UNION+OCC2+IND2+(1|ID),
                        data=submain)
     
     save(mod1,mod1L, mod1.fr, mod1L.fr, mod2, mod2.fr,mod2.fr.int, mod3, mod3.fr,
          mod3.fr.int, mod4, mod4.fr, mod4.fr.int,
-         file="malemod.RData")
+         file="./Analysis/Output/malemod.RData")
