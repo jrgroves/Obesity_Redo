@@ -67,6 +67,8 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
            Sex = relevel(Sex, ref="Male"),
            BMI_Level = factor(BMI_Level, level=c("Normal","Overweight","Obese")),
            BMI_Level = relevel(BMI_Level, ref="Normal"),
+           BMI_Level_L = factor(BMI_Level_L, level=c("Normal","Overweight","Obese")),
+           BMI_Level_L = relevel(BMI_Level_L, ref="Normal"),
            Race = factor(Race),
            Race = relevel(Race, ref="White"),
            Region = factor(Region),
@@ -83,13 +85,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
            mutate(OCC2 = factor(OCC2),
                   OCC2 = relevel(OCC2, ref="00"),
                   IND2 = factor(IND2),
-                  IND2 = relevel(IND2, ref="OTH")) %>%
-    group_by((ID)) %>%
-      mutate(BMI_Level_L = lag(BMI_Level),
-             BMI_Level_L = factor(BMI_Level_L, levels=c("Normal","Overweight","Obese")),
-             BMI_Level_L = relevel(BMI_Level_L, ref="Normal")) %>%
-    ungroup()
-
+                  IND2 = relevel(IND2, ref="OTH"))
   main<-main %>%
     select(-Year.x, -zW, -Health.raw, -Week, -Weight, -URBAN, -Height, -Year.y)
      
@@ -170,6 +166,11 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     mod1.fr<-coxme(Surv(Spell, event)~BMI_Level+(1|ID), data=main)
     mod1L.fr<-coxme(Surv(Spell, event)~BMI_Level_L+(1|ID), data=subset(main, !is.na(BMI_Level_L)))
     
+    mod1.llt<-pchisq(q=as.numeric(-2*(logLik(mod1)[1]-mod1.fr$loglik["Integrated"])),
+                     df=mod1.fr$df[1]-1,lower.tail = FALSE)
+    mod1L.llt<-pchisq(q=as.numeric(-2*(logLik(mod1L)[1]-mod1L.fr$loglik["Integrated"])),
+                     df=mod1L.fr$df[1]-1,lower.tail = FALSE)
+    
     #Addition of individual specific elements
     
     mod2<-coxph(Surv(Spell, event)~BMI_Level+Sex+Race+Marriage+Education+
@@ -179,10 +180,16 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     mod2.fr<-coxme(Surv(Spell, event)~BMI_Level+Sex+Race+Marriage+Education+
                   Age+Child6+GFinc+Score+Ten+Exp+Health+Region+(1|ID),
                 data=main)
+
+    mod2.llt<-pchisq(q=as.numeric(-2*(logLik(mod2)[1]-mod2.fr$loglik["Integrated"])),
+                     df=mod2.fr$df[1]-1,lower.tail = FALSE)
     
+    #Not needed because initial difference in Lagged was due to programer error.
+    #mod2L.fr<-coxme(Surv(Spell, event)~BMI_Level_L+Sex+Race+Marriage+Education+
+    #                 Age+Child6+GFinc+Score+Ten+Exp+Health+Region+(1|ID),
+    #               data=subset(main, !is.na(BMI_Level_L)))
+                   
     #Addition of Industry, Occupation, and Economy
-    
-    
     mod3<-coxph(Surv(Spell, event)~BMI_Level+Sex+Race+Marriage+Education+
                   Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
                   URATE+SearchCT+Term,
@@ -193,6 +200,9 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                   URATE+SearchCT+Term+(1|ID),
                 data=main)
     
+    mod3.llt<-pchisq(q=as.numeric(-2*(logLik(mod3)[1]-mod3.fr$loglik["Integrated"])),
+                     df=mod3.fr$df[1]-1,lower.tail = FALSE)
+    
     mod4<-coxph(Surv(Spell, event)~BMI_Level+Sex+Race+Marriage+Education+
                   Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
                   URATE+SearchCT+Term+UNION+OCC2+IND2,
@@ -202,6 +212,9 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                      Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
                      URATE+SearchCT+Term+UNION+OCC2+IND2+(1|ID),
                    data=main)
+    mod4.llt<-pchisq(q=as.numeric(-2*(logLik(mod4)[1]-mod4.fr$loglik["Integrated"])),
+                     df=mod4.fr$df[1]-1,lower.tail = FALSE)
+    
     
     save(mod1,mod1L, mod1.fr, mod1L.fr, mod2, mod2.fr, mod3, mod3.fr,mod4, mod4.fr,
          file="./Analysis/Output/fullmod.RData")
