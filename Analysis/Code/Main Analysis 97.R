@@ -166,12 +166,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     mod1.fr<-coxme(Surv(Spell, event)~BMI_Level+(1|ID), data=main)
     mod1L.fr<-coxme(Surv(Spell, event)~BMI_Level_L+(1|ID), data=subset(main, !is.na(BMI_Level_L)))
     
-    mod1.llt<-pchisq(q=as.numeric(-2*(logLik(mod1)[1]-mod1.fr$loglik["Integrated"])),
-                     df=mod1.fr$df[1]-1,lower.tail = FALSE)
-    mod1L.llt<-pchisq(q=as.numeric(-2*(logLik(mod1L)[1]-mod1L.fr$loglik["Integrated"])),
-                     df=mod1L.fr$df[1]-1,lower.tail = FALSE)
-    
-    #Addition of individual specific elements
+  #Addition of individual specific elements
     
     mod2<-coxph(Surv(Spell, event)~BMI_Level+Sex+Race+Marriage+Education+
                   Age+Child6+GFinc+Score+Ten+Exp+Health+Region,
@@ -181,8 +176,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                   Age+Child6+GFinc+Score+Ten+Exp+Health+Region+(1|ID),
                 data=main)
 
-    mod2.llt<-pchisq(q=as.numeric(-2*(logLik(mod2)[1]-mod2.fr$loglik["Integrated"])),
-                     df=mod2.fr$df[1]-1,lower.tail = FALSE)
+   
     
     #Not needed because initial difference in Lagged was due to programer error.
     #mod2L.fr<-coxme(Surv(Spell, event)~BMI_Level_L+Sex+Race+Marriage+Education+
@@ -200,8 +194,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                   URATE+SearchCT+Term+(1|ID),
                 data=main)
     
-    mod3.llt<-pchisq(q=as.numeric(-2*(logLik(mod3)[1]-mod3.fr$loglik["Integrated"])),
-                     df=mod3.fr$df[1]-1,lower.tail = FALSE)
+
     
     mod4<-coxph(Surv(Spell, event)~BMI_Level+Sex+Race+Marriage+Education+
                   Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
@@ -212,9 +205,8 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                      Age+Child6+GFinc+Score+Ten+Exp+Health+Region+
                      URATE+SearchCT+Term+UNION+OCC2+IND2+(1|ID),
                    data=main)
-    mod4.llt<-pchisq(q=as.numeric(-2*(logLik(mod4)[1]-mod4.fr$loglik["Integrated"])),
-                     df=mod4.fr$df[1]-1,lower.tail = FALSE)
     
+
     
     save(mod1,mod1L, mod1.fr, mod1L.fr, mod2, mod2.fr, mod3, mod3.fr,mod4, mod4.fr,
          file="./Analysis/Output/fullmod.RData")
@@ -339,3 +331,22 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
     save(mod1,mod1L, mod1.fr, mod1L.fr, mod2, mod2.fr,mod2.fr.int, mod3, mod3.fr,
          mod3.fr.int, mod4, mod4.fr, mod4.fr.int,
          file="./Analysis/Output/malemod.RData")
+    
+#Testing Statistics
+    
+  #Load a set of results first and then run these tests for significance
+  #of Random Effects model
+    
+    mod1.llt<-pchisq(q=as.numeric(-2*(logLik(mod1)[1]-mod1.fr$loglik["Integrated"])),
+                     df=mod1.fr$df[1]-1,lower.tail = FALSE)
+    mod1L.llt<-pchisq(q=as.numeric(-2*(logLik(mod1L)[1]-mod1L.fr$loglik["Integrated"])),
+                      df=mod1L.fr$df[1]-1,lower.tail = FALSE)
+    mod2.llt<-pchisq(q=as.numeric(-2*(logLik(mod2)[1]-mod2.fr$loglik["Integrated"])),
+                     df=mod2.fr$df[1]-1,lower.tail = FALSE)
+    mod3.llt<-pchisq(q=as.numeric(-2*(logLik(mod3)[1]-mod3.fr$loglik["Integrated"])),
+                     df=mod3.fr$df[1]-1,lower.tail = FALSE)
+    mod4.llt<-pchisq(q=as.numeric(-2*(logLik(mod4)[1]-mod4.fr$loglik["Integrated"])),
+                     df=mod4.fr$df[1]-1,lower.tail = FALSE)
+    
+    
+    
