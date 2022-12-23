@@ -1,6 +1,7 @@
 rm(list=ls())
 
-new_data <- read.table('./Build/Input/Gaps97.dat', sep=' ')
+
+new_data <- read.table('./Build/Input/FullGaps.dat', sep=' ')
 names(new_data) <- c('E0011406',
 'E0011407',
 'E0011408',
@@ -1382,12 +1383,7 @@ names(new_data) <- c('E0011406',
 'E0014027',
 'E0014028',
 'E0014029',
-'R0000100',
-'R0536300',
-'R0536401',
-'R0536402',
-'R1235800',
-'R1482600')
+'R0000100')
 
 
 # Handle missing values
@@ -1402,35 +1398,6 @@ new_data[new_data == -5] = NA  # Non-interview
 # If there are values not categorized they will be represented as NA
 
 vallabels = function(data) {
-  data$R0536300 <- factor(data$R0536300,
-levels=c(0.0,1.0,2.0),
-labels=c("No Information",
-"Male",
-"Female"))
-  data$R0536401 <- factor(data$R0536401,
-levels=c(1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0),
-labels=c("1: January",
-"2: February",
-"3: March",
-"4: April",
-"5: May",
-"6: June",
-"7: July",
-"8: August",
-"9: September",
-"10: October",
-"11: November",
-"12: December"))
-  data$R1235800 <- factor(data$R1235800,
-levels=c(0.0,1.0),
-labels=c("Oversample",
-"Cross-sectional"))
-  data$R1482600 <- factor(data$R1482600,
-levels=c(1.0,2.0,3.0,4.0),
-labels=c("Black",
-"Hispanic",
-"Mixed Race (Non-Hispanic)",
-"Non-Black / Non-Hispanic"))
 return(data)
 }
 
@@ -18036,12 +18003,7 @@ varlabels <- c("1994 EMP: EMP STAT WK L6",
 "2020 EMP: EMP STAT WK L27",
 "2020 EMP: EMP STAT WK L28",
 "2020 EMP: EMP STAT WK L29",
-"PUBID - YTH ID CODE 1997",
-"KEY!SEX (SYMBOL) 1997",
-"KEY!BDATE M/Y (SYMBOL) 1997",
-"KEY!BDATE M/Y (SYMBOL) 1997",
-"CV_SAMPLE_TYPE 1997",
-"KEY!RACE_ETHNICITY (SYMBOL) 1997"
+"PUBID - YTH ID CODE 1997"
 )
 
 
@@ -19429,12 +19391,7 @@ names(data) <- c("EMP_STATUS_1994.06_XRND",
 "EMP_STATUS_2020.27_XRND",
 "EMP_STATUS_2020.28_XRND",
 "EMP_STATUS_2020.29_XRND",
-"PUBID_1997",
-"KEY_SEX_1997",
-"KEY_BDATE_M_1997",
-"KEY_BDATE_Y_1997",
-"CV_SAMPLE_TYPE_1997",
-"KEY_RACE_ETHNICITY_1997")
+"PUBID_1997")
 return(data)
 }
 
@@ -19445,7 +19402,7 @@ return(data)
 #categories <- vallabels(new_data)
 
 # Remove the '#' before the following lines to rename variables using Qnames instead of Reference Numbers
-#new_data <- qnames(new_data)
+new_data <- qnames(new_data)
 #categories <- qnames(categories)
 
 # Produce summaries for the raw (uncategorized) data file

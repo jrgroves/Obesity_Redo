@@ -1,14 +1,16 @@
 #Creates unemployed gaps using the NLSY97 Data and includes the start and end week of gap
 #By Jeremy Groves
 #January 26, 2021
+#UPDATED: December 23, 2022: See notebook for specifics. Also streamlined gap length computation
 
 rm(list=ls())
 
 library(tidyverse)
-library(data.table)
-library(stringr)
+#library(data.table)
+library(ISOweek)
 
-source("./Build/Code/Gaps97.R")
+
+source("./Build/Code/FullGaps.R") #Changed from Gaps97 to include more gaps
 load("./Build/Input/OCC_IND.RData")
 
 rm(list=c("qnames","vallabels","varlabels"))
@@ -23,29 +25,29 @@ names(core)<-gsub("_XRND","",names(core))
 
 core <- core %>%
     pivot_longer(!ID,names_to="period",values_to="status") %>%
-      mutate(Year=substr(period,1,4)) %>%
-        mutate(Week=substr(period,6,7)) %>%
-          mutate(UID = ifelse(status>100,status,NA)) %>%
-          mutate(Unemp = case_when(
-            status<1 ~ 0,
-            is.na(status) ~ 0,
-            status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
-            status == 4 ~ 1,
-            status == 3 | status > 100 ~ 0)) %>%
-      mutate(Working = case_when(
-          status<1 ~ 0,
-          is.na(status) ~ 0,
-          status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
-          status == 4 ~ 0,
-          status == 3 | status > 100 ~ 1)) %>%
-              arrange(ID)
+    mutate(Year=substr(period,1,4),
+           Week=substr(period,6,7),
+           EmpID = ifelse(status>100,status,NA), #For R working, this is employer ID
+           Unemp = case_when(
+                             status<1 ~ 0,
+                             is.na(status) ~ 0,
+                             status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
+                             status == 4 ~ 1,
+                             status == 3 | status > 100 ~ 0),
+           Working = case_when(
+                               status<1 ~ 0,
+                               is.na(status) ~ 0,
+                               status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
+                               status == 4 ~ 0,
+                               status == 3 | status > 100 ~ 1))%>%
+    arrange(ID)
 
 core <- core %>%
     group_by(ID) %>%
       mutate(Exp = cumsum(Working))
 
-core <- core %>%
-   group_by(ID, UID) %>%
+core2 <- core %>%
+   group_by(ID, EmpID) %>%
        mutate(Ten = cumsum(Working))
 
 c<-IOU %>%
@@ -54,80 +56,38 @@ c<-IOU %>%
 
 #Generate Spell Lengths and Start and End Dates
 
-d <- core %>%
-       group_by(ID) %>%
-         mutate(spell = cumsum(Unemp)) %>%
-          mutate(
-            spell2 = {
-              r <- rle(Unemp)
-              r$values <- cumsum(r$values) * r$values
-              inverse.rle(r) 
-            }
-            )
-e <- d %>%
-  arrange(ID,period) %>%
-    group_by(ID)%>%
-      mutate(Wid=seq_along(Week))
-
-spell.time<-e %>%   #Need this for translation later
-  subset(ID==1) %>%
-    select(period,Wid)
-spell.time$ID<-NULL
-
-g <- e %>%
-      group_by(ID, grp = rleid(spell2)) %>%
-        filter(spell2 !=0) %>%
-            summarise(spell_length = n()) %>% 
-                mutate(Spell=seq_along(ID)) %>%
-                  select(-grp)
-
-#Use e to start a new data set for spell start and end
-
-f<-e %>%
+core <- core2 %>%
   group_by(ID) %>%
-  mutate(Ten=lag(Ten),
-         UID=lag(UID)) %>%
-  subset(spell2>0) %>%
-     mutate(Wid2=lead(Wid)) %>%
-       mutate(blah=ifelse(Wid+1==(Wid2), 1, 0)) %>%
-        mutate(ends=ifelse(blah==0,Wid,0)) %>%
-          mutate(starts=lag(ifelse(ends>0,lead(Wid),0)))
-
-f$starts[is.na(f$starts)]<-f$Wid[is.na(f$starts)]
-f$ends[is.na(f$ends)]<-f$Wid[is.na(f$ends)]
-
-f <- f %>%
-      subset(ends !=0 | starts !=0) %>%
-      mutate(ends=lead(ends)) %>%
-        group_by(ID) %>%
-          distinct(spell2, .keep_all=TRUE) %>%
-             select(ID,spell,spell2,ends,starts,Exp,Ten,UID)
-
-
-f<-merge(f,spell.time,by.x="starts",by.y="Wid")
-  names(f)[which(names(f)=="period")]<-"Spell.Start"
-f<-merge(f,spell.time,by.x="ends",by.y="Wid")
-  names(f)[which(names(f)=="period")]<-"Spell.Ends"
-
-#Create ID and merge with IND, OCC, Union data  
-f$JID<-paste(f$ID,f$UID,sep="_")
-  f<-merge(f, c, by="JID", all.x=TRUE)
-
-f<-f%>%
-  arrange(ID,spell2) %>%
-    select(-ends,-starts,-spell)
-gaps<-merge(f,g,by.x=c("ID","spell2"),by.y=c("ID","Spell"),all.x=TRUE )
-
-gaps<-arrange(gaps,ID,spell2)
-  names(gaps)[which(names(gaps)=="spell2")]<-"Spell.Num"
+  mutate(reason = ifelse(Unemp != lead(Unemp), lead(status), NA),
+         r.start = lag(status)) %>%
+  filter(Unemp == 1) %>%
+  mutate(start = ifelse(lag(Exp)==Exp, 1, 0),
+         stop = ifelse(lead(Exp)==Exp, 1, 0),
+         start = replace_na(start, 0),
+         stop = replace_na(stop, 0)) %>%
+  filter(start!=stop) %>%
+  mutate(pstop = ifelse(stop==1, lead(period), NA),
+         r.end = lead(reason)) %>%
+  filter(start==0) %>%
+  filter(r.end > 6 | r.end==5) %>%
+  mutate(Reason = case_when(r.end == 5 ~ "Left Workforce",
+                            r.end > 6 ~ "New Job"),
+         start = ISOweek2date(paste0(substr(period, 1, 4), "-W", substr(period, 6,7), "-1")),
+         stop = ISOweek2date(paste0(substr(pstop, 1, 4), "-W", substr(pstop, 6,7), "-1")),
+         length = as.numeric((stop - start)/7),
+         JID = paste(ID, r.start, sep="_"))
   
-rm(d,e,f,g,spell.time,new_data,core,c)
+
+#Merge with IND, OCC, Union data  
+
+core <- core %>%
+  full_join(., c, by="JID")
 
 #Final Data set
 
-gaps<-gaps %>%
+gaps<-core %>%
         mutate(event=1) %>%
-           select(-JID, -UID) %>%
+           select(-JID, -EmpID, -period, -status, -Working, -pstop, -Unemp) %>%
             replace_na(list(IND=0, OCC=0, UNION=0)) %>%
               group_by(ID)%>%
                 mutate(Spell.Num=cumsum(event))
@@ -151,19 +111,14 @@ search<-search %>%
   subset(Yes==1) %>%
   select(-Yes) 
 
-search$count=1
 
-search<-search %>%
+gaps <- gaps %>%
   group_by(ID) %>%
-  mutate(Spell.Num=cumsum(count)) %>%
-  select(-count)
-
-gaps<-merge(gaps,search,by=c("ID","Spell.Num"),all.x=TRUE)
-
-gaps<-gaps %>%
-    replace_na(list(n=0)) %>%
-      rename(SearchCT=n) %>%
-        select(-Gap_Year)
+  mutate(Gap_Year = ifelse(r.end!=5, paste(str_pad(cumsum(event), 2, pad = "0"), substr(r.end, 1, 4), sep="_"), NA)) %>%
+  left_join(., search, by=c("ID","Gap_Year")) %>%
+  replace_na(list(n=0)) %>%
+  rename(SearchCT=n) %>%
+  select(-Gap_Year)
  
 save(gaps,file="./Build/Output/gaps97.RData")
 

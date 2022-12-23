@@ -5,6 +5,8 @@
 #longer a possibility. Changed to cox proportional model using coxme with mixed effects
 #in terms of the frailty of ID. Also utilized factor approach on factor variables.
 
+#Modified December 19, 2022: Making correction for revise and resubmit.
+
 
 rm(list=ls())
 
@@ -12,7 +14,7 @@ library(tidyverse)
 library(survival)
 library(fastDummies)
 library(vtable)
-library(jstable)
+#library(jstable)
 library(stargazer)
 library(survminer)
 library(coxme)
@@ -50,7 +52,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                         subset(!is.na(Marriage)) %>%
                           subset(!is.na(Child6)) %>%
                             subset(Race != "Mixed") %>%
-                              subset(BMI_Level != "Underweight") %>%
+                              #subset(BMI_Level != "Underweight") %>%
                                 replace_na(list(TERM = "Unknown")) %>%
                                  subset(TERM!="Prison")
                                   
@@ -65,9 +67,9 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
   main <- main %>%
     mutate(Sex = factor(Sex),
            Sex = relevel(Sex, ref="Male"),
-           BMI_Level = factor(BMI_Level, level=c("Normal","Overweight","Obese")),
+           BMI_Level = factor(BMI_Level, level=c("Normal","Overweight","Obese", "Underweight")),
            BMI_Level = relevel(BMI_Level, ref="Normal"),
-           BMI_Level_L = factor(BMI_Level_L, level=c("Normal","Overweight","Obese")),
+           BMI_Level_L = factor(BMI_Level_L, level=c("Normal","Overweight","Obese", "Underweight")),
            BMI_Level_L = relevel(BMI_Level_L, ref="Normal"),
            Race = factor(Race),
            Race = relevel(Race, ref="White"),
@@ -87,7 +89,11 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                   IND2 = factor(IND2),
                   IND2 = relevel(IND2, ref="OTH"))
   main<-main %>%
-    select(-Year.x, -zW, -Health.raw, -Week, -Weight, -URBAN, -Height, -Year.y)
+    select(-Year.x, -zW, -Health.raw, -Week, -Weight, -URBAN, -Height, -Year.y) %>%
+    filter(Age > Ten) %>%
+    mutate(Ovr21 = case_when(Age <= 21 ~ 0,
+                             Age > 21 ~ 1))
+
      
 #Summary Statistics for Paper
 
@@ -124,9 +130,9 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
              xlab = "Time in weeks",
              break.time.by = 2,
              surv.median.line = "hv",
-             legend.labs = c("Normal", "Overweight", "Obese"),
+             legend.labs = c("Normal", "Overweight", "Obese", "Underweight"),
              title = "Figure 1:K-M Survival by BMI Level",
-             palette = "grey",
+             #palette = "grey",
              theme = theme_bw())
   
   fit <- survfit(Surv(Spell, event) ~ BMI_Level, data = subset(main, Sex=="Female"))
