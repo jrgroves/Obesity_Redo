@@ -1,145 +1,120 @@
-#Creates the Characteristic files for the NLSY dataset from 1980 to 2004
+#Creates the Characteristic files for the NLSY97 data
 #By Jeremy Groves
-#January 6, 2021
-#Translation and update from old STATA code (charct.do)
+#December 23, 2022 [Reversion of the Main Characteristics and BMI 97.R file which was unclear, must use 
+                  #Github reversion to pre-Dec29 for old code.]
 
 rm(list=ls())
 
 library(tidyverse)
-library(foreign)
-library(zoo)
+#library(foreign)
+library(zoo) #Contains the Interpolation command
 library(measurements)
 
 #Loading extra characteristics added later
-core<-read.csv("./Build/Input/core2.csv", as.is=TRUE, header=TRUE)
+source("./Build/Code/Weight.R")
+rm(varlabels, qnames, vallabels, vallabels_continuous)
 
 #Create Main Time Consistent Characteristics
-core <- core%>%
-    rename(Gender="R0536300") %>%
-      rename(Bday.m="R0536401") %>%
-        rename(Bday.y="R0536402") %>%
-          rename(R="R1482600") %>%
-            rename(ID="R0000100")
+core <- new_data %>%
+  select(-starts_with("EMP"), -"YSAQ-373_1997", -"CV_SAMPLE_TYPE_1997") %>%
+  rename(ID = PUBID_1997,
+         Gender = KEY_SEX_1997,
+         Bday.M = KEY_BDATE_M_1997,
+         Bday.Y = KEY_BDATE_Y_1997,
+         Race = KEY_RACE_ETHNICITY_1997,
+         P1.Weight = "P4-018_1997",
+         P2.Weight = "P4-025_1997",
+         P1.Hght.F = "P4-016_1997",
+         P1.Hght.I = "P4-017_1997",
+         P2.Hght.F = "P4-023_1997",
+         P2.Hght.I = "P4-024_1997")
 
-#Subset out and decode main TC Characteristics
-core.1<-select(core,c("ID","Gender","Bday.m","Bday.y","R"))
-  core.1 <- core.1 %>%
-    slice(rep(1:n(), each = 15)) %>%
-      group_by(ID) %>%
-        mutate(Year=seq(1997,2011)) %>%
-          mutate(Age=Year-Bday.y) %>%
-            select(-Bday.m,-Bday.y) %>%
-              mutate(Sex = case_when(
-                Gender==1 ~ "Male",
-                Gender==2 ~ "Female")) %>%
-                mutate(Race= case_when(
-                  R==1 ~ "Black",
-                  R==2 ~ "Hispanic",
-                  R==3 ~ "Mixed",
-                  R==4 ~ "White"))%>%
-                    select(ID,Age,Race,Sex,Year)
+names(core) <- gsub("YHEA-2200", "Weight", names(core))
+names(core) <- gsub("YHEA-2300", "Weight", names(core))
+names(core) <- gsub("YSAQ-000B", "Weight", names(core))
+names(core) <- gsub("YHEA-SAQ-000B", "Weight", names(core))
 
-#Subset and Decode the Time Varying Characteristics
-core.2<-select(core,-c("R1235800","Gender","Bday.m","Bday.y","R"))
+names(core) <- gsub("YHEA-2100", "Inches", names(core))
+names(core) <- gsub("YHEA-2000", "Feet", names(core))
+names(core) <- gsub("YHEA-2050", "Feet", names(core))
+names(core) <- gsub("YSAQ-000A~000002", "Inches", names(core))
+names(core) <- gsub("YSAQ-000A000002", "Inches", names(core))
+names(core) <- gsub("YSAQ-000A~000001", "Feet", names(core))
+names(core) <- gsub("YSAQ-000A000001", "Feet", names(core))
+names(core) <- gsub("YSAQ-374", "Plan", names(core))
 
-#Pre-Define and Rename Columns
-x<-2
-y<-3
-z<-4
+fixed <- core %>%
+  select(ID, Gender, Bday.M, Bday.Y, starts_with("P1"), starts_with("P2"), Race) %>%
+  mutate(BD = paste(str_pad(Bday.M, 2, pad="0"), "01", Bday.Y, sep="-"),
+         Bday = as.Date(BD, format = "%m-%d-%Y")) %>%
+  select(-c("BD", "Bday.M")) %>%
+  mutate(Gender = case_when(
+    Gender==1 ~ "Male",
+    Gender==2 ~ "Female"),
+    Race = case_when(
+      Race==1 ~ "Black",
+      Race==2 ~ "Hispanic",
+      Race==3 ~ "Mixed",
+      Race==4 ~ "White"),
+    P1.Height = (P1.Hght.F * 12) + P1.Hght.I,
+    P1.Height = conv_unit(P1.Height, "inch", "m"),
+    P1.Weight = conv_unit(P1.Weight, "lbs", "kg"),
+    P1.BMI = P1.Weight/((P1.Height)^2),
+    P2.Height = (P2.Hght.F * 12) + P2.Hght.I,
+    P2.Height = conv_unit(P2.Height, "inch", "m"),
+    P2.Weight = conv_unit(P2.Weight, "lbs", "kg"),
+    P2.BMI = P2.Weight/((P2.Height)^2)) %>%
+  select(-c(P1.Hght.F, P1.Hght.I, P1.Weight, P2.Hght.F, P2.Hght.I, P2.Weight))
 
-for(i in seq(1997,2011)){
-  core.2[(which(core.2[,x]<0)),x]<-NA
-  core.2[(which(core.2[,y]<0)),y]<-NA
-  core.2[(which(core.2[,z]<0)),z]<-NA
-  
-  core.2$temp<-core.2[,x]*12+core.2[,y]
-    names(core.2)[which(names(core.2)=="temp")]<-paste0("height",i)
-              names(core.2)[z]<-paste0("weight",i)
-  x<-x+3
-  y<-y+3
-  z<-z+3
-}
 
-#Create Height and Weights
+variable <- core %>%
+  select(-Gender, -Bday.M, -Bday.Y, -starts_with("P1"), -starts_with("P2"), -Race) %>%
+  pivot_longer(-ID, names_to = "Measure", values_to = "Value") %>%
+  mutate(Year = str_split_fixed(Measure, "_", 2)[,2],
+         Measure = str_split_fixed(Measure, "_", 2)[,1]) %>%
+  pivot_wider(id_cols = c("ID", "Year"), names_from = "Measure", values_from = "Value") %>%
+  mutate(Height = (Feet*12) + Inches)
 
-core.2a <- core.2 %>%
-    select(starts_with("height") | starts_with("ID")) %>%
-        gather(Measure,Height,height1997:height2011) %>%
-          mutate(Year=substr(Measure,7,10)) %>%
-            select(-Measure)
 
-core.2a$Height[which(core.2a$Height<0)]<-NA
-
-core.2b <- core.2 %>%
-  select(starts_with("weight") | starts_with("ID")) %>%
-      gather(Measure,Weight,weight1997:weight2011) %>%
-        mutate(Year=substr(Measure,7,10)) %>%
-          select(-Measure)
-core.2b$Weight[which(core.2b$Weight<0)]<-NA
-
-core.2<-merge(core.2a,core.2b)
-  rm(core.2a,core.2b)
-
-core.2 <- core.2 %>%
+#Calculates missing weights and heights and BMI         
+variable <- variable  %>%
+  filter(Year < 2012) %>% #Limits data to 2011 due to survey changing to every two
   group_by(ID) %>%
-    mutate(Height2=median(Height,na.rm=TRUE))
+  mutate(Weight = replace(Weight, Weight <= 30, NA),
+         Weight = replace(Weight, Weight == 999, NA), #Removes weights less than 30 pounds which are clear errors and equal to 999
+         count=sum(is.na(Weight)),
+         zw = scale(Weight),
+         Weight = replace(Weight, zw < -2.5, NA),
+         Weight = replace(Weight, zw > 2.5, NA),
+         zh = scale(Height),
+         Height = replace(Height, zh < -2.5, NA),
+         Height = replace(Height, zh > 2.5, NA)) %>%
+  arrange(ID, Year) %>%
+  mutate(Weight2 = na.approx(Weight, maxgap = 13, rule = 2),
+         Height2 = na.approx(Height, maxgap = 13, rule = 2),
+         Height = conv_unit(Height, "inch", "m"),
+         Weight = conv_unit(Weight, "lbs", "kg"),
+         BMI = Weight/((Height)^2),
+         BMI_Level = case_when(
+           BMI< 18.5 ~ "Underweight",
+           BMI>= 18.5 & BMI < 25 ~ "Normal",
+           BMI>= 25 & BMI < 30 ~ "Overweight",
+           BMI >= 30 ~ "Obese"),
+         Height2 = conv_unit(Height2, "inch", "m"),
+         Weight2 = conv_unit(Weight2, "lbs", "kg"),
+         BMI2 = Weight2/((Height2)^2),
+         BMI_Level2 = case_when(
+           BMI2< 18.5 ~ "Underweight",
+           BMI2>= 18.5 & BMI2 < 25 ~ "Normal",
+           BMI2>= 25 & BMI2 < 30 ~ "Overweight",
+           BMI2 >= 30 ~ "Obese")) %>%
+  select(-c(zw,zh,Feet,Inches, count))
 
-#Removes weights less than 30 pounds which are clear errors
+core <- fixed %>%
+  full_join(., variable, by="ID") %>%
+  mutate(Age = as.numeric(Year) - Bday.Y) %>%
+  select(-Bday.Y)
 
-core.2$Weight[which(core.2$Weight<=30)]<-NA
-
-core.2 <- core.2 %>%
-    group_by(ID) %>%
-      mutate(count=sum(is.na(Weight))) %>%
-        subset(count<14)
-
-core.2<-core.2 %>%
-  group_by(ID) %>%
-    mutate(zW=scale(Weight))
-
-core.2$Weight[which(core.2$zW < -2.5)]<-NA
-core.2$Weight[which(core.2$zW > 2.5)]<-NA
-core.2$Weight[which(core.2$Weight==999)]<-NA
-
-#Interpolate the missing weights using tidyverse linear na.approx
-core.2<-core.2 %>%
-  group_by(ID) %>%
-    arrange(Weight,Year) %>%
-      mutate(Weight2 = na.approx(Weight, maxgap = 13, rule = 2)) %>%
-        select(ID,Year,Height,Weight,Height2,Weight2)
-
-#Calculate BMI
-
-  #Convert to metrics for BMI calculations
-    core.2$Height2<-conv_unit(core.2$Height2,"inch","m")
-    core.2$Weight2<-conv_unit(core.2$Weight2, "lbs","kg")
-    
-  #Calculate BMI
-    core.2 <- core.2 %>%
-        mutate(BMI=Weight2/((Height2)^2))
-    
-  #Classify the BMI
-    core.2<-core.2 %>%
-        mutate(BMI_Level = case_when(
-          BMI< 18.5 ~ "Underweight",
-          BMI>= 18.5 & BMI < 25 ~ "Normal",
-          BMI>= 25 & BMI < 30 ~ "Overweight",
-          BMI >= 30 ~ "Obese"
-          ))
-  
-  #Remove outliers of the BMI to account to errors in weights and heights
-    core.2<-core.2 %>%
-      mutate(zW=scale(BMI)) %>%
-        subset(zW > -2.5) %>%
-          subset(zW < 2.5)
-    
-#Merge Time Constant Characteristics Keeping on ly Core.2 Values
-    core<-merge(core.1,core.2,by=c("ID","Year"),all.y=TRUE)
-    
-    core<-core %>%
-            group_by(ID) %>%
-              mutate(BMI_L = lag(BMI),
-                     BMI_Level_L = lag(BMI_Level))
     
 #Save File
     save(core,file="./Build/Output/core97.RData")

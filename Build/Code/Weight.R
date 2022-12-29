@@ -7625,7 +7625,7 @@ new_data <- qnames(new_data)
 #categories <- qnames(categories)
 
 # Produce summaries for the raw (uncategorized) data file
-summary(new_data)
+#summary(new_data)
 
 # Remove the '#' before the following lines to produce summaries for the "categories" data file.
 #categories <- vallabels(new_data)

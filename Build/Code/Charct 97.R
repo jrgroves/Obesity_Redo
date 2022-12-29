@@ -6,7 +6,7 @@ rm(list=ls())
 
 library(tidyverse)
 #library(foreign)
-#library(zoo)
+library(zoo) #Contains the Interpolation command
 library(measurements)
 
 #Loading extra characteristics added later
@@ -36,17 +36,35 @@ names(core) <- gsub("YHEA-SAQ-000B", "Weight", names(core))
 names(core) <- gsub("YHEA-2100", "Inches", names(core))
 names(core) <- gsub("YHEA-2000", "Feet", names(core))
 names(core) <- gsub("YHEA-2050", "Feet", names(core))
-names(core) <- gsub("YSAQ-000A~000002", "Feet", names(core))
-names(core) <- gsub("YSAQ-000A000002", "Feet", names(core))
-names(core) <- gsub("YSAQ-000A~000001", "Inches", names(core))
-names(core) <- gsub("YSAQ-000A000001", "Inches", names(core))
+names(core) <- gsub("YSAQ-000A~000002", "Inches", names(core))
+names(core) <- gsub("YSAQ-000A000002", "Inches", names(core))
+names(core) <- gsub("YSAQ-000A~000001", "Feet", names(core))
+names(core) <- gsub("YSAQ-000A000001", "Feet", names(core))
 names(core) <- gsub("YSAQ-374", "Plan", names(core))
 
 fixed <- core %>%
   select(ID, Gender, Bday.M, Bday.Y, starts_with("P1"), starts_with("P2"), Race) %>%
   mutate(BD = paste(str_pad(Bday.M, 2, pad="0"), "01", Bday.Y, sep="-"),
          Bday = as.Date(BD, format = "%m-%d-%Y")) %>%
-  select(-c("BD", "Bday.M", "Bday.Y"))
+  select(-c("BD", "Bday.M")) %>%
+  mutate(Gender = case_when(
+                  Gender==1 ~ "Male",
+                  Gender==2 ~ "Female"),
+         Race = case_when(
+                  Race==1 ~ "Black",
+                  Race==2 ~ "Hispanic",
+                  Race==3 ~ "Mixed",
+                  Race==4 ~ "White"),
+         P1.Height = (P1.Hght.F * 12) + P1.Hght.I,
+         P1.Height = conv_unit(P1.Height, "inch", "m"),
+         P1.Weight = conv_unit(P1.Weight, "lbs", "kg"),
+         P1.BMI = P1.Weight/((P1.Height)^2),
+         P2.Height = (P2.Hght.F * 12) + P2.Hght.I,
+         P2.Height = conv_unit(P2.Height, "inch", "m"),
+         P2.Weight = conv_unit(P2.Weight, "lbs", "kg"),
+         P2.BMI = P2.Weight/((P2.Height)^2)) %>%
+  select(-c(P1.Hght.F, P1.Hght.I, P1.Weight, P2.Hght.F, P2.Hght.I, P2.Weight))
+         
 
 variable <- core %>%
   select(-Gender, -Bday.M, -Bday.Y, -starts_with("P1"), -starts_with("P2"), -Race) %>%
@@ -54,13 +72,25 @@ variable <- core %>%
   mutate(Year = str_split_fixed(Measure, "_", 2)[,2],
          Measure = str_split_fixed(Measure, "_", 2)[,1]) %>%
   pivot_wider(id_cols = c("ID", "Year"), names_from = "Measure", values_from = "Value") %>%
-  mutate(Height = Feet*12 + Inches)
+  mutate(Height = (Feet*12) + Inches)
 
-
-
-
-
-,
+         
+#Calculates missing weights and heights and BMI         
+variable <- variable  %>%
+  filter(Year < 2012) %>% #Limits data to 2011 due to survey changing to every two
+  group_by(ID) %>%
+  mutate(Weight = replace(Weight, Weight <= 30, NA),
+         Weight = replace(Weight, Weight == 999, NA), #Removes weights less than 30 pounds which are clear errors and equal to 999
+         count=sum(is.na(Weight)),
+         zw = scale(Weight),
+         Weight = replace(Weight, zw < -2.5, NA),
+         Weight = replace(Weight, zw > 2.5, NA),
+         zh = scale(Height),
+         Height = replace(Height, zh < -2.5, NA),
+         Height = replace(Height, zh > 2.5, NA)) %>%
+  arrange(ID, Year) %>%
+  mutate(Weight2 = na.approx(Weight, maxgap = 13, rule = 2),
+         Height2 = na.approx(Height, maxgap = 13, rule = 2),
          Height = conv_unit(Height, "inch", "m"),
          Weight = conv_unit(Weight, "lbs", "kg"),
          BMI = Weight/((Height)^2),
@@ -68,7 +98,21 @@ variable <- core %>%
                           BMI< 18.5 ~ "Underweight",
                           BMI>= 18.5 & BMI < 25 ~ "Normal",
                           BMI>= 25 & BMI < 30 ~ "Overweight",
-                          BMI >= 30 ~ "Obese"))
+                          BMI >= 30 ~ "Obese"),
+         Height2 = conv_unit(Height2, "inch", "m"),
+         Weight2 = conv_unit(Weight2, "lbs", "kg"),
+         BMI2 = Weight2/((Height2)^2),
+         BMI_Level2 = case_when(
+                                 BMI2< 18.5 ~ "Underweight",
+                                 BMI2>= 18.5 & BMI2 < 25 ~ "Normal",
+                                 BMI2>= 25 & BMI2 < 30 ~ "Overweight",
+                                 BMI2 >= 30 ~ "Obese")) %>%
+  select(-c(zw,zh,Feet,Inches, count))
+
+core <- fixed %>%
+  full_join(., variable, by="ID") %>%
+  mutate(Age = as.numeric(Year) - Bday.Y) %>%
+  select(-Bday.Y)
 
 
 
