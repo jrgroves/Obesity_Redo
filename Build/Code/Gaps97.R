@@ -19445,7 +19445,7 @@ return(data)
 #categories <- vallabels(new_data)
 
 # Remove the '#' before the following lines to rename variables using Qnames instead of Reference Numbers
-#new_data <- qnames(new_data)
+new_data <- qnames(new_data)
 #categories <- qnames(categories)
 
 # Produce summaries for the raw (uncategorized) data file

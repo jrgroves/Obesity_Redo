@@ -1,12 +1,51 @@
-#Contains old gap data 97 codes that create gaps
+#Creates unemployed gaps using the NLSY97 Data and includes the start and end week of gap
+#By Jeremy Groves
+#January 26, 2021
+
+rm(list=ls())
+
+library(tidyverse)
+library(data.table)
+
+source("./Build/Code/Gaps97.R")
+
+rm(list=c("qnames","vallabels","varlabels"))
+
+#Decode Data
+
+core<-new_data %>%
+  rename(ID=PUBID_1997)
+
+names(core)<-gsub("EMP_STATUS_","",names(core))
+names(core)<-gsub("_XRND","",names(core))
+
+core <- core %>%
+  gather(period,status,-ID) %>%
+  mutate(Year=substr(period,1,4)) %>%
+  mutate(Week=substr(period,6,7)) %>%
+  mutate(Unemp = case_when(
+    status<1 ~ 0,
+    is.na(status) ~ 0,
+    status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
+    status == 4 ~ 1,
+    status == 3 | status > 100 ~ 0)) %>%
+  mutate(Working = case_when(
+    status<1 ~ 0,
+    is.na(status) ~ 0,
+    status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
+    status == 4 ~ 0,
+    status == 3 | status > 100 ~ 1)) %>%
+  arrange(ID)
+
+core <- core %>%
+  group_by(ID) %>%
+  mutate(tenure = cumsum(Working))
 
 
+#Generate Spell Lengths and Start and End Dates
 
-reason == 6 ~ "Active Military",
-reason == 0 ~ "Missing",
-reason == 1 ~ ))
-
-%>%
+d <- core %>%
+  group_by(ID) %>%
   mutate(spell = cumsum(Unemp)) %>%
   mutate(
     spell2 = {
@@ -35,9 +74,6 @@ g <- e %>%
 #Use e to start a new data set for spell start and end
 
 f<-e %>%
-  group_by(ID) %>%
-  mutate(Ten=lag(Ten),
-         UID=lag(UID)) %>%
   subset(spell2>0) %>%
   mutate(Wid2=lead(Wid)) %>%
   mutate(blah=ifelse(Wid+1==(Wid2), 1, 0)) %>%
@@ -52,18 +88,13 @@ f <- f %>%
   mutate(ends=lead(ends)) %>%
   group_by(ID) %>%
   distinct(spell2, .keep_all=TRUE) %>%
-  select(ID,spell,spell2,ends,starts,Exp,Ten,UID)
+  select(ID,spell,spell2,ends,starts,tenure)
 
 
 f<-merge(f,spell.time,by.x="starts",by.y="Wid")
 names(f)[which(names(f)=="period")]<-"Spell.Start"
 f<-merge(f,spell.time,by.x="ends",by.y="Wid")
 names(f)[which(names(f)=="period")]<-"Spell.Ends"
-
-
-
-f$JID<-paste(f$ID,f$UID,sep="_")
-f<-merge(f, c, by="JID", all.x=TRUE)
 
 f<-f%>%
   arrange(ID,spell2) %>%
@@ -73,13 +104,15 @@ gaps<-merge(f,g,by.x=c("ID","spell2"),by.y=c("ID","Spell"),all.x=TRUE )
 gaps<-arrange(gaps,ID,spell2)
 names(gaps)[which(names(gaps)=="spell2")]<-"Spell.Num"
 
-rm(d,e,f,g,spell.time,new_data,core,c)
+rm(d,e,f,g,spell.time,new_data,core)
+
+#Final Data set
+
+gaps$event<-1
+
+gaps <- gaps %>%
+  rename(length = spell_length)
+
+save(gaps,file="./Build/Output/gaps97.RData")
 
 
-
-search$count=1
-
-search<-search %>%
-  group_by(ID) %>%
-  mutate(Spell.Num=cumsum(count)) %>%
-  select(-count)

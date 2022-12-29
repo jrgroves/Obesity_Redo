@@ -17,11 +17,11 @@ names(core)<-gsub("CV_","",names(core))
 core.h<-core %>%
     select(ID, starts_with("YHEA-100") & !contains("1005") & !contains("1006")) %>%
       pivot_longer(!ID, names_to = "Year", values_to = "Health.raw") %>%
-        mutate( Year=as.numeric(gsub("YHEA-100_","",Year))) %>%
+        mutate(Year = as.numeric(gsub("YHEA-100_","",Year))) %>%
           mutate(Health = case_when(
-            Health.raw < 3  ~ "Good",
-            Health.raw == 3 ~ "Average",
-            Health.raw > 3 ~ "Poor"))
+                              Health.raw < 3  ~ "Good",
+                              Health.raw == 3 ~ "Average",
+                              Health.raw > 3 ~ "Poor"))
 
 
 #Census Regions and Locality
@@ -44,7 +44,7 @@ core.ur <- core %>%    #Urban or Rural
                    URBAN = ifelse(URBAN==2,NA,URBAN))
   
 #Education
-#Recoded on Jan 26, 2022 to better split education
+  #Recoded on Jan 26, 2022 to better split education
 
 core.ed<-core %>%   #Current Enrollment
   select(ID,starts_with("ENROLLSTAT")) %>%
@@ -108,17 +108,18 @@ core.othinc<- core %>%    #Log of Gross Family Income
 #Combine data into core of control variables
 core.cont<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                   list(core.c6, core.cr, core.ed, core.h,
-                         core.hhs, core.wage, core.othinc, core.ur,
+                       core.hhs, core.wage, core.othinc, core.ur,
                        core.mar))
+core.cont$Year <- as.numeric(core.cont$Year)
 
 
 save(core.cont,file="./Build/OUtput/Controls97.RData")
 
 #Pull Out the Cong. Score#
 
-cong.s<-core %>%
+core.s<-core %>%
   select(ID, ASVAB_MATH_VERBAL_SCORE_PCT_1999) %>%
     mutate(Score = ASVAB_MATH_VERBAL_SCORE_PCT_1999/1000) %>%
       select(ID, Score)
 
-save(cong.s, file="./Build/Output/Score.RData")
+save(core.s, file="./Build/Output/Score.RData")

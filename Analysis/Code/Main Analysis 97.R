@@ -1,6 +1,7 @@
 #Joins data and perform analysis using NLSY 97 Data
 #By Jeremy Groves
 #January 26, 2021
+
 #Modified January 19, 2022. survreg with Weibull and frailty was not connect and is no
 #longer a possibility. Changed to cox proportional model using coxme with mixed effects
 #in terms of the frailty of ID. Also utilized factor approach on factor variables.
@@ -26,70 +27,60 @@ load("./Build/Output/Controls97.RData")
 load("./Build/Output/Score.RData")
 load("./Build/Input/unemp.RData")
 
-core<-merge(core,cong.s,by="ID")
+main <- core %>%
+  inner_join(., gaps, by=c("ID", "Year")) %>%
+  filter(Race != "Mixed") %>%
+  mutate(Gender = factor(Gender),
+         Gender = relevel(Gender, ref="Male"),
+         BMI_Level = factor(BMI_Level, level=c("Normal","Overweight","Obese", "Underweight")),
+         BMI_Level = relevel(BMI_Level, ref="Normal"),
+         BMI_Level_L = factor(BMI_Level_L, level=c("Normal","Overweight","Obese", "Underweight")),
+         BMI_Level_L = relevel(BMI_Level_L, ref="Normal"),
+         Race = factor(Race),
+         Race = relevel(Race, ref="White")) %>%
+  inner_join(., core.s, by="ID") %>%
+  inner_join(., core.cont, by=c("ID", "Year")) %>%
+  mutate(Spell.Start = paste(Year, Week, sep=".")) %>%
+  left_join(., unemp, by=c("Spell.Start", "Region")) %>%
+  mutate(TERM = replace(TERM, is.na(TERM), "Unknown"),
+          Region = factor(Region),
+          Region = relevel(Region, ref="West"),
+          Education = factor(Education),
+          Education = relevel(Education, ref="LessHS"),
+          Health = factor(Health),
+          Health = relevel(Health, ref="Good"),
+          Marriage = factor(Marriage),
+          Marriage = relevel(Marriage, ref="NeverMarried"),
+          Term = factor(TERM),
+          Term = relevel(Term, ref="Unknown")) %>%
+  replace_na(list(OCC2 = "00", IND2 = "OTH")) %>%
+  mutate(OCC2 = factor(OCC2),
+         OCC2 = relevel(OCC2, ref="00"),
+         IND2 = factor(IND2),
+         IND2 = relevel(IND2, ref="OTH"))
+  
 
-gaps$Year<-as.numeric(substr(gaps$Spell.Start,1,4))
 
-main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
-                    list(gaps,core,core.cont))
-
-  #Remove incomplete observations
-   main <- main %>%
-      subset(!is.na(Age))
-   
-  #Create Remove NAs and subset data
+  #Remove NAs and subset data
     main <- main %>%
-      mutate(BMI_Level2=ifelse(BMI_Level=="Normal" | BMI_Level=="Overweight",
-                               "Normal",BMI_Level),
-             Spell = spell_length) %>%
-         subset(!is.na(BMI_Level)) %>%
-            subset(!is.na(Region)) %>%
-              subset(!is.na(Education)) %>%
-                subset(!is.na(Health)) %>%
-                  subset(!is.na(GFinc)) %>%
-                    subset(!is.na(Ten)) %>%
-                      subset(!is.na(Score)) %>%
-                        subset(!is.na(Marriage)) %>%
-                          subset(!is.na(Child6)) %>%
-                            subset(Race != "Mixed") %>%
-                              #subset(BMI_Level != "Underweight") %>%
-                                replace_na(list(TERM = "Unknown")) %>%
-                                 subset(TERM!="Prison")
-                                  
- 
-  #Add Regional Unemployment Rates
-  main<-merge(main,unemp,by=c("Spell.Start","Region"),all.x=TRUE)
-    main<-main %>%
-      subset(!is.na(URATE))
-
-       
-  #Create Factors for Categorical Variables
-  main <- main %>%
-    mutate(Sex = factor(Sex),
-           Sex = relevel(Sex, ref="Male"),
-           BMI_Level = factor(BMI_Level, level=c("Normal","Overweight","Obese", "Underweight")),
-           BMI_Level = relevel(BMI_Level, ref="Normal"),
-           BMI_Level_L = factor(BMI_Level_L, level=c("Normal","Overweight","Obese", "Underweight")),
-           BMI_Level_L = relevel(BMI_Level_L, ref="Normal"),
-           Race = factor(Race),
-           Race = relevel(Race, ref="White"),
-           Region = factor(Region),
-           Region = relevel(Region, ref="West"),
-           Education = factor(Education),
-           Education = relevel(Education, ref="LessHS"),
-           Health = factor(Health),
-           Health = relevel(Health, ref="Good"),
-           Marriage = factor(Marriage),
-           Marriage = relevel(Marriage, ref="NeverMarried"),
-           Term = factor(TERM),
-           Term = relevel(Term, ref="Unknown")) %>%
-    replace_na(list(OCC2 = "00", IND2 = "OTH")) %>%
-           mutate(OCC2 = factor(OCC2),
-                  OCC2 = relevel(OCC2, ref="00"),
-                  IND2 = factor(IND2),
-                  IND2 = relevel(IND2, ref="OTH"))
+      mutate(BMI_Level2 = case_when(BMI_Level=="Normal" ~ "Normal",
+                                    BMI_Level=="Overweight" ~ "Normal",
+                                    BMI_Level== "Underweight" ~ "Underweight",
+                                    BMI_Level=="Obese" ~ "Obese")) %>%
+      filter(!is.na(BMI_Level),
+             !is.na(Region),
+             !is.na(Education),
+             !is.na(Health),
+             !is.na(GFinc),
+             !is.na(Ten),
+             !is.na(Score),
+             !is.na(Marriage),
+             !is.na(Child6),
+             !is.na(URATE)) %>%
+      mutate(Term = replace(TERM, NA, "Unknown"))
+   
   main<-main %>%
-    select(-Year.x, -zW, -Health.raw, -Week, -Weight, -URBAN, -Height, -Year.y) %>%
+    select(-Year.x, -Health.raw, -Week.x, -Weight.r, -URBAN, -Height.r, -Year.y, -Week.y) %>%
     filter(Age > Ten) %>%
     mutate(Ovr21 = case_when(Age <= 21 ~ 0,
                              Age > 21 ~ 1))
@@ -97,7 +88,7 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
      
 #Summary Statistics for Paper
 
-  a<-as.data.frame(model.matrix(~Sex - 1, data=main))
+  a<-as.data.frame(model.matrix(~Gender - 1, data=main))
   b<-as.data.frame(model.matrix(~BMI_Level - 1, data=main))
   c<-as.data.frame(model.matrix(~Race - 1, data=main))
   d<-as.data.frame(model.matrix(~Region - 1, data=main))
@@ -107,21 +98,27 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
   h<-as.data.frame(model.matrix(~Term - 1, data=main))
   
   sumfac<-main %>%
-    select(ID,Spell, BMI, Age, Child6, HH_Size, GFinc, URATE,
+    select(ID,length, BMI, Age, Child6, HH_Size, GFinc, URATE,
            Score,SearchCT, Ten, Exp, UNION)
-  sumfac<-cbind(sumfac,a,b,c,d,e,f,g,h)
+  sumfac<-as.data.frame(cbind(sumfac,a,b,c,d,e,f,g,h))
   
-  rm(a,b,c,d,e,f,g,h)
-  stargazer(sumfac, subset(sumfac, SexMale==1), subset(sumfac, SexFemale==1),
-            type="text",out="./Analysis/Output/full.txt")
+  
+rm(a,b,c,d,e,f,g.h)
+  stargazer(sumfac, subset(sumfac, GenderFemale==1), subset(sumfac, GenderFemale==1),
+            type="text", out="./Analysis/Output/full.txt")
+  
+  
   stargazer(sumfac, subset(sumfac, BMI_LevelNormal==1), subset(sumfac, BMI_LevelOverweight==1), 
-            subset(sumfac, BMI_LevelObese==1),type="text",out="./Analysis/Output/obesity.txt")
+            subset(sumfac, BMI_LevelObese==1), subset(sumfac, BMI_LevelUnderweight == 1),
+            type="text",out="./Analysis/Output/obesity.txt")
+  
+  
   stargazer(subset(sumfac, RaceWhite==1), subset(sumfac, RaceBlack==1), subset(sumfac, RaceHispanic==1),
             type="text",out="./Analysis/Output/race.txt")
   
 #K-M Nonparameter Curve Graphs
   
-  fit <- survfit(Surv(Spell, event) ~ BMI_Level, data = main)
+  fit <- survfit(Surv(length, event) ~ BMI_Level, data = main)
   ggsurvplot(fit, 
              data=main, 
              conf.int = TRUE,
@@ -135,50 +132,50 @@ main<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
              #palette = "grey",
              theme = theme_bw())
   
-  fit <- survfit(Surv(Spell, event) ~ BMI_Level, data = subset(main, Sex=="Female"))
+  fit <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Gender=="Female"))
   ggsurvplot(fit, 
-             data=subset(main, Sex=="Female"), 
+             data=subset(main, Gender=="Female"), 
              conf.int = TRUE,
              conf.int.style = "step",
              xlim = c(0, 30),
              xlab = "Time in weeks",
              break.time.by = 2,
              surv.median.line = "hv",
-             legend.labs = c("Normal", "Overweight", "Obese"),
+             legend.labs = c("Normal", "Overweight", "Obese", "Underweight"),
              title = "Figure 2:K-M Survival for Females by BMI Level",
-             palette = "grey",
+             #palette = "grey",
              theme = theme_bw())
   
-  fit <- survfit(Surv(Spell, event) ~ BMI_Level, data = subset(main, Sex=="Male"))
+  fit <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Gender=="Male"))
   ggsurvplot(fit, 
-             data=subset(main, Sex=="Male"), 
+             data=subset(main, Gender=="Male"), 
              conf.int = TRUE,
              conf.int.style = "step",
              xlim = c(0, 30),
              xlab = "Time in weeks",
              break.time.by = 2,
              surv.median.line = "hv",
-             legend.labs = c("Normal", "Overweight", "Obese"),
+             legend.labs = c("Normal", "Overweight", "Obese", "Underweight"),
              title = "Figure 3:K-M Survival for Males by BMI Level",
-             palette = "grey",
+             #palette = "grey",
              theme = theme_bw())
   
 
   
 #Modeling
-    mod1<-coxph(Surv(Spell, event)~BMI_Level, data=main)
-    mod1L<-coxph(Surv(Spell, event)~BMI_Level_L, data=subset(main, !is.na(BMI_Level_L)))
+    mod1<-coxph(Surv(length, event)~BMI_Level, data=main)
+    mod1L<-coxph(Surv(length, event)~BMI_Level_L, data=subset(main, !is.na(BMI_Level_L)))
     
-    mod1.fr<-coxme(Surv(Spell, event)~BMI_Level+(1|ID), data=main)
-    mod1L.fr<-coxme(Surv(Spell, event)~BMI_Level_L+(1|ID), data=subset(main, !is.na(BMI_Level_L)))
+    mod1.fr<-coxme(Surv(length, event)~BMI_Level+(1|ID), data=main)
+    mod1L.fr<-coxme(Surv(length, event)~BMI_Level_L+(1|ID), data=subset(main, !is.na(BMI_Level_L)))
     
   #Addition of individual specific elements
     
-    mod2<-coxph(Surv(Spell, event)~BMI_Level+Sex+Race+Marriage+Education+
+    mod2<-coxph(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+
                   Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region,
                 data=main)
     
-    mod2.fr<-coxme(Surv(Spell, event)~BMI_Level+Sex+Race+Marriage+Education+
+    mod2.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+
                   Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+(1|ID),
                 data=main)
 

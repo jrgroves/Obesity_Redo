@@ -92,28 +92,32 @@ variable <- variable  %>%
   arrange(ID, Year) %>%
   mutate(Weight2 = na.approx(Weight, maxgap = 13, rule = 2),
          Height2 = na.approx(Height, maxgap = 13, rule = 2),
-         Height = conv_unit(Height, "inch", "m"),
-         Weight = conv_unit(Weight, "lbs", "kg"),
+         Height.r = conv_unit(Height, "inch", "m"),
+         Weight.r = conv_unit(Weight, "lbs", "kg"),
+         BMI.r = Weight.r/((Height.r)^2),
+         BMI_Level.r = case_when(
+           BMI.r< 18.5 ~ "Underweight",
+           BMI.r>= 18.5 & BMI.r < 25 ~ "Normal",
+           BMI.r>= 25 & BMI.r < 30 ~ "Overweight",
+           BMI.r >= 30 ~ "Obese"),
+         Height = conv_unit(Height2, "inch", "m"),
+         Weight = conv_unit(Weight2, "lbs", "kg"),
          BMI = Weight/((Height)^2),
          BMI_Level = case_when(
            BMI< 18.5 ~ "Underweight",
            BMI>= 18.5 & BMI < 25 ~ "Normal",
            BMI>= 25 & BMI < 30 ~ "Overweight",
-           BMI >= 30 ~ "Obese"),
-         Height2 = conv_unit(Height2, "inch", "m"),
-         Weight2 = conv_unit(Weight2, "lbs", "kg"),
-         BMI2 = Weight2/((Height2)^2),
-         BMI_Level2 = case_when(
-           BMI2< 18.5 ~ "Underweight",
-           BMI2>= 18.5 & BMI2 < 25 ~ "Normal",
-           BMI2>= 25 & BMI2 < 30 ~ "Overweight",
-           BMI2 >= 30 ~ "Obese")) %>%
+           BMI >= 30 ~ "Obese")) %>%
   select(-c(zw,zh,Feet,Inches, count))
 
 core <- fixed %>%
   full_join(., variable, by="ID") %>%
   mutate(Age = as.numeric(Year) - Bday.Y) %>%
-  select(-Bday.Y)
+  select(-Bday.Y) %>%
+  arrange(ID, Year) %>%
+  group_by(ID) %>%
+  mutate(BMI_Level_L = lag(BMI_Level),
+         Year = as.numeric(Year))
 
     
 #Save File
