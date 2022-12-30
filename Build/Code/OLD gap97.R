@@ -14,33 +14,34 @@ rm(list=c("qnames","vallabels","varlabels"))
 #Decode Data
 
 core<-new_data %>%
-  rename(ID=PUBID_1997)
+  rename(ID=PUBID_1997) %>%
+  select(-starts_with("KEY"), -starts_with("CV"))
 
 names(core)<-gsub("EMP_STATUS_","",names(core))
 names(core)<-gsub("_XRND","",names(core))
+
 
 core <- core %>%
   gather(period,status,-ID) %>%
   mutate(Year=substr(period,1,4)) %>%
   mutate(Week=substr(period,6,7)) %>%
   mutate(Unemp = case_when(
-    status<1 ~ 0,
-    is.na(status) ~ 0,
-    status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
-    status == 4 ~ 1,
-    status == 3 | status > 100 ~ 0)) %>%
+                    status<1 ~ 0,
+                    is.na(status) ~ 0,
+                    status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
+                    status == 4 ~ 1,
+                    status == 3 | status > 100 ~ 0)) %>%
   mutate(Working = case_when(
-    status<1 ~ 0,
-    is.na(status) ~ 0,
-    status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
-    status == 4 ~ 0,
-    status == 3 | status > 100 ~ 1)) %>%
+                    status<1 ~ 0,
+                    is.na(status) ~ 0,
+                    status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
+                    status == 4 ~ 0,
+                    status == 3 | status > 100 ~ 1)) %>%
   arrange(ID)
 
 core <- core %>%
   group_by(ID) %>%
   mutate(tenure = cumsum(Working))
-
 
 #Generate Spell Lengths and Start and End Dates
 
@@ -96,7 +97,7 @@ names(f)[which(names(f)=="period")]<-"Spell.Start"
 f<-merge(f,spell.time,by.x="ends",by.y="Wid")
 names(f)[which(names(f)=="period")]<-"Spell.Ends"
 
-f<-f%>%
+h<-f%>%
   arrange(ID,spell2) %>%
   select(-ends,-starts,-spell)
 gaps<-merge(f,g,by.x=c("ID","spell2"),by.y=c("ID","Spell"),all.x=TRUE )

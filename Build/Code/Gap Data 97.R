@@ -46,49 +46,44 @@ core <- core %>%
   group_by(ID) %>%
   mutate(Exp = cumsum(Working))
 
-core2 <- core %>%
-  group_by(ID, EmpID) %>%
-  mutate(Ten = cumsum(Working))
+core <- core %>%
+  group_by(ID, status) %>%
+  mutate(TEN = cumsum(Working))
 
-c<-IOU %>%
-  select(JID,OCC,IND,UNION,TERM,OCC2,IND2)%>%
-  distinct(JID, .keep_all = TRUE)
 
 #Generate Spell Lengths and Start and End Dates
 
-core <- core2 %>%
+core <- core %>%
   group_by(ID) %>%
-  mutate(reason = ifelse(Unemp != lead(Unemp), lead(status), NA),
-         r.start = lag(status)) %>%
-  filter(Unemp == 1) %>%
-  mutate(start = ifelse(lag(Exp)==Exp, 1, 0),
-         stop = ifelse(lead(Exp)==Exp, 1, 0),
-         start = replace_na(start, 0),
-         stop = replace_na(stop, 0)) %>%
-  filter(start!=stop) %>%
-  mutate(pstop = ifelse(stop==1, lead(period), NA),
-         r.end = lead(reason)) %>%
-  filter(start==0) %>%
-  filter(r.end > 6 | r.end==5) %>%
-  mutate(Reason = case_when(r.end == 5 ~ "Left Workforce",
-                            r.end > 6 ~ "New Job"),
+  mutate(U2 = lead(Unemp),
+         reason = lead(status),
+         Ten = lag(TEN),
+         s2 = lag(status),
+         start = case_when(lag(Unemp)==0 & Unemp==1 ~ 1,
+                           TRUE ~ 0),
+         end = case_when(Unemp==1 & U2==0 ~ 1,
+                         TRUE ~ 0)) %>%
+  filter(start == 1 | end == 1) %>%
+  arrange(ID, period) %>%
+  mutate(end = lead(period),
+         r.end = lead(reason))%>%
+  filter(start==1) %>%
+  mutate(end = case_when(is.na(end) ~ period, #This solves case of a typo in status
+                         TRUE ~ end),
          start = ISOweek2date(paste0(substr(period, 1, 4), "-W", substr(period, 6,7), "-1")),
-         stop = ISOweek2date(paste0(substr(pstop, 1, 4), "-W", substr(pstop, 6,7), "-1")),
+         stop = ISOweek2date(paste0(substr(end, 1, 4), "-W", substr(end, 6,7), "-1")),
          length = as.numeric((stop - start)/7),
-         JID = paste(ID, r.start, sep="_"))
-
+         R.End = case_when(r.end == 5 ~ "Left Workforce",
+                            r.end > 6 ~ "New Job"),
+         EmpID = ifelse(s2<100, NA, as.numeric(s2)))  %>%
+  select(ID, period, EmpID, Exp, Ten, start, stop, length, R.End)
 
 #Merge with IND, OCC, Union data  
 
 core <- core %>%
-  full_join(., c, by="JID")
-
-#Final Data set
-
-gaps<-core %>%
+  left_join(IOU, by=c("ID", "EmpID")) %>%
   mutate(event=1) %>%
-  select(-JID, -EmpID, -period, -status, -Working, -pstop, -Unemp) %>%
-  replace_na(list(IND=0, OCC=0, UNION=0)) %>%
+  select(-c(Year, Job)) %>%
   group_by(ID)%>%
   mutate(Spell.Num=cumsum(event))
 
@@ -112,14 +107,15 @@ search<-search %>%
   select(-Yes) 
 
 
-gaps <- gaps %>%
+gaps <- core %>%
   group_by(ID) %>%
-  mutate(Gap_Year = ifelse(r.end!=5, paste(str_pad(cumsum(event), 2, pad = "0"), substr(r.end, 1, 4), sep="_"), NA)) %>%
+  mutate(Gap_Year = ifelse(R.End!="Left Workforce", paste(str_pad(cumsum(event), 2, pad = "0"), substr(as.character(EmpID), 1, 4), sep="_"), NA)) %>%
   left_join(., search, by=c("ID","Gap_Year")) %>%
   replace_na(list(n=0)) %>%
   rename(SearchCT=n) %>%
   select(-Gap_Year) %>%
-  mutate(Year = as.numeric(Year))
+  mutate(Year = as.numeric(substr(period, 1, 4))) %>%
+  filter(Year < 2012)
 
 save(gaps,file="./Build/Output/gaps97.RData")
 

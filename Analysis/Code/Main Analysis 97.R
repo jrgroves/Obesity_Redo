@@ -40,9 +40,9 @@ main <- core %>%
          Race = relevel(Race, ref="White")) %>%
   inner_join(., core.s, by="ID") %>%
   inner_join(., core.cont, by=c("ID", "Year")) %>%
-  mutate(Spell.Start = paste(Year, Week, sep=".")) %>%
+  rename(Spell.Start = period) %>%
   left_join(., unemp, by=c("Spell.Start", "Region")) %>%
-  mutate(TERM = replace(TERM, is.na(TERM), "Unknown"),
+  mutate(Reason = replace(Reason, is.na(Reason), "Unknown"),
           Region = factor(Region),
           Region = relevel(Region, ref="West"),
           Education = factor(Education),
@@ -51,7 +51,7 @@ main <- core %>%
           Health = relevel(Health, ref="Good"),
           Marriage = factor(Marriage),
           Marriage = relevel(Marriage, ref="NeverMarried"),
-          Term = factor(TERM),
+          Term = factor(Reason),
           Term = relevel(Term, ref="Unknown")) %>%
   replace_na(list(OCC2 = "00", IND2 = "OTH")) %>%
   mutate(OCC2 = factor(OCC2),
@@ -76,8 +76,8 @@ main <- core %>%
              !is.na(Score),
              !is.na(Marriage),
              !is.na(Child6),
-             !is.na(URATE)) %>%
-      mutate(Term = replace(TERM, NA, "Unknown"))
+             !is.na(URATE),
+             length < 425) 
    
   main<-main %>%
     select(-Year.x, -Health.raw, -Week.x, -Weight.r, -URBAN, -Height.r, -Year.y, -Week.y) %>%
@@ -99,12 +99,12 @@ main <- core %>%
   
   sumfac<-main %>%
     select(ID,length, BMI, Age, Child6, HH_Size, GFinc, URATE,
-           Score,SearchCT, Ten, Exp, UNION)
+           Score,SearchCT, Ten, Exp, Union)
   sumfac<-as.data.frame(cbind(sumfac,a,b,c,d,e,f,g,h))
   
   
-rm(a,b,c,d,e,f,g.h)
-  stargazer(sumfac, subset(sumfac, GenderFemale==1), subset(sumfac, GenderFemale==1),
+rm(a,b,c,d,e,f,g,h)
+  stargazer(sumfac, subset(sumfac, GenderFemale==1), subset(sumfac, GenderMale==1),
             type="text", out="./Analysis/Output/full.txt")
   
   
