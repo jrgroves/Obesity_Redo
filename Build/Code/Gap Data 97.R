@@ -40,6 +40,7 @@ core <- core %>%
            status == 1 | status == 2 | status == 5 | status ==6 ~ 0,
            status == 4 ~ 0,
            status == 3 | status > 100 ~ 1))%>%
+  filter(Year < 2012) %>%
   arrange(ID)
 
 core <- core %>%
@@ -75,13 +76,14 @@ core <- core %>%
          length = as.numeric((stop - start)/7),
          R.End = case_when(r.end == 5 ~ "Left Workforce",
                             r.end > 6 ~ "New Job"),
-         EmpID = ifelse(s2<100, NA, as.numeric(s2)))  %>%
+         EmpID = ifelse(s2<100, NA, as.numeric(s2)),
+         EmpID = as.character(EmpID))  %>%
   select(ID, period, EmpID, Exp, Ten, start, stop, length, R.End)
 
 #Merge with IND, OCC, Union data  
 
 core <- core %>%
-  left_join(IOU, by=c("ID", "EmpID")) %>%
+  left_join(IOU, by=c("ID","EmpID")) %>%
   mutate(event=1) %>%
   select(-c(Year, Job)) %>%
   group_by(ID)%>%

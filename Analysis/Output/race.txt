@@ -1,0 +1,135 @@
+
+=============================================================
+Statistic              N     Mean    St. Dev.   Min     Max  
+-------------------------------------------------------------
+ID                   6,932 3,784.745 2,011.347   34    9,022 
+length               6,932  10.962    15.654     1      217  
+BMI                  6,932  25.823     6.100   11.340 92.224 
+Age                  6,932  22.729     3.502     17     31   
+Child6               6,932   0.313     0.658     0       4   
+HH_Size              6,932   3.365     1.556     1      14   
+GFinc                6,932  10.851     2.050   0.000  13.654 
+URATE                6,932   6.031     1.859   3.500  11.000 
+Score                6,932  51.862    28.578   0.000  100.000
+SearchCT             6,932   0.091     0.581     0       8   
+Ten                  6,932  203.735   153.447    0      742  
+Exp                  6,932  32.845    84.970     0     1,064 
+Union                6,932   0.018     0.134     0       1   
+GenderMale           6,932   0.531     0.499     0       1   
+GenderFemale         6,932   0.469     0.499     0       1   
+BMI_LevelNormal      6,932   0.509     0.500     0       1   
+BMI_LevelOverweight  6,932   0.258     0.437     0       1   
+BMI_LevelObese       6,932   0.199     0.400     0       1   
+BMI_LevelUnderweight 6,932   0.034     0.181     0       1   
+RaceWhite            6,932   1.000     0.000     1       1   
+RaceHispanic         6,932   0.000     0.000     0       0   
+RaceBlack            6,932   0.000     0.000     0       0   
+RegionWest           6,932   0.235     0.424     0       1   
+RegionNorEst         6,932   0.162     0.369     0       1   
+RegionSouth          6,932   0.317     0.465     0       1   
+RegionNorCen         6,932   0.286     0.452     0       1   
+MarriageNeverMarried 6,932   0.806     0.396     0       1   
+MarriageMarried      6,932   0.145     0.352     0       1   
+MarriageSeparated    6,932   0.050     0.217     0       1   
+HealthGood           6,932   0.597     0.491     0       1   
+HealthAverage        6,932   0.303     0.460     0       1   
+HealthPoor           6,932   0.100     0.300     0       1   
+EducationLessHS      6,932   0.179     0.384     0       1   
+EducationSomeCol     6,932   0.379     0.485     0       1   
+EducationCollegeGrad 6,932   0.118     0.323     0       1   
+EducationHS          6,932   0.290     0.454     0       1   
+EducationCollegePlus 6,932   0.034     0.181     0       1   
+TermUnknown          6,932   0.019     0.137     0       1   
+TermLeft Workforce   6,932   0.560     0.496     0       1   
+TermNew Job          6,932   0.421     0.494     0       1   
+-------------------------------------------------------------
+
+============================================================
+Statistic              N     Mean    St. Dev.   Min    Max  
+------------------------------------------------------------
+ID                   5,708 5,961.915 2,578.093   18   9,016 
+length               5,708  15.130    19.979     1     328  
+BMI                  5,708  27.542     6.939   13.193 69.942
+Age                  5,708  22.999     3.561     17     31  
+Child6               5,708   0.576     0.859     0      6   
+HH_Size              5,708   3.752     1.860     1      15  
+GFinc                5,708   9.893     2.823   0.000  13.644
+URATE                5,708   5.919     1.817   3.500  11.000
+Score                5,708  25.096    22.417   0.000  99.220
+SearchCT             5,708   0.061     0.479     0      9   
+Ten                  5,708  160.504   133.727    0     671  
+Exp                  5,708  20.252    59.125     0     870  
+Union                5,708   0.022     0.146     0      1   
+GenderMale           5,708   0.472     0.499     0      1   
+GenderFemale         5,708   0.528     0.499     0      1   
+BMI_LevelNormal      5,708   0.431     0.495     0      1   
+BMI_LevelOverweight  5,708   0.275     0.446     0      1   
+BMI_LevelObese       5,708   0.275     0.447     0      1   
+BMI_LevelUnderweight 5,708   0.019     0.137     0      1   
+RaceWhite            5,708   0.000     0.000     0      0   
+RaceHispanic         5,708   0.000     0.000     0      0   
+RaceBlack            5,708   1.000     0.000     1      1   
+RegionWest           5,708   0.054     0.225     0      1   
+RegionNorEst         5,708   0.123     0.329     0      1   
+RegionSouth          5,708   0.643     0.479     0      1   
+RegionNorCen         5,708   0.180     0.384     0      1   
+MarriageNeverMarried 5,708   0.908     0.289     0      1   
+MarriageMarried      5,708   0.076     0.265     0      1   
+MarriageSeparated    5,708   0.016     0.125     0      1   
+HealthGood           5,708   0.603     0.489     0      1   
+HealthAverage        5,708   0.277     0.448     0      1   
+HealthPoor           5,708   0.120     0.325     0      1   
+EducationLessHS      5,708   0.249     0.433     0      1   
+EducationSomeCol     5,708   0.343     0.475     0      1   
+EducationCollegeGrad 5,708   0.043     0.202     0      1   
+EducationHS          5,708   0.352     0.478     0      1   
+EducationCollegePlus 5,708   0.013     0.115     0      1   
+TermUnknown          5,708   0.017     0.129     0      1   
+TermLeft Workforce   5,708   0.644     0.479     0      1   
+TermNew Job          5,708   0.339     0.473     0      1   
+------------------------------------------------------------
+
+===========================================================
+Statistic              N     Mean    St. Dev.   Min   Max  
+-----------------------------------------------------------
+ID                   3,010 5,590.553 2,730.192   4   9,019 
+length               3,010  11.890    16.520     1    257  
+BMI                  3,010  27.524     6.819   7.939 68.144
+Age                  3,010  22.723     3.603    17     31  
+Child6               3,010   0.540     0.873     0     10  
+HH_Size              3,010   4.136     2.076     1     19  
+GFinc                3,010  10.464     2.548   0.000 13.441
+URATE                3,010   6.184     1.987   3.500 11.000
+Score                3,010  32.669    24.921   0.000 99.053
+SearchCT             3,010   0.058     0.434     0     6   
+Ten                  3,010  180.447   150.547    0    772  
+Exp                  3,010  27.850    73.989     0    957  
+Union                3,010   0.021     0.143     0     1   
+GenderMale           3,010   0.506     0.500     0     1   
+GenderFemale         3,010   0.494     0.500     0     1   
+BMI_LevelNormal      3,010   0.409     0.492     0     1   
+BMI_LevelOverweight  3,010   0.288     0.453     0     1   
+BMI_LevelObese       3,010   0.284     0.451     0     1   
+BMI_LevelUnderweight 3,010   0.019     0.136     0     1   
+RaceWhite            3,010   0.000     0.000     0     0   
+RaceHispanic         3,010   1.000     0.000     1     1   
+RaceBlack            3,010   0.000     0.000     0     0   
+RegionWest           3,010   0.459     0.498     0     1   
+RegionNorEst         3,010   0.136     0.343     0     1   
+RegionSouth          3,010   0.304     0.460     0     1   
+RegionNorCen         3,010   0.101     0.301     0     1   
+MarriageNeverMarried 3,010   0.798     0.402     0     1   
+MarriageMarried      3,010   0.167     0.373     0     1   
+MarriageSeparated    3,010   0.035     0.184     0     1   
+HealthGood           3,010   0.554     0.497     0     1   
+HealthAverage        3,010   0.329     0.470     0     1   
+HealthPoor           3,010   0.117     0.321     0     1   
+EducationLessHS      3,010   0.262     0.440     0     1   
+EducationSomeCol     3,010   0.342     0.475     0     1   
+EducationCollegeGrad 3,010   0.053     0.224     0     1   
+EducationHS          3,010   0.330     0.470     0     1   
+EducationCollegePlus 3,010   0.013     0.115     0     1   
+TermUnknown          3,010   0.020     0.141     0     1   
+TermLeft Workforce   3,010   0.608     0.488     0     1   
+TermNew Job          3,010   0.372     0.483     0     1   
+-----------------------------------------------------------

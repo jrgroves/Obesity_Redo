@@ -16,18 +16,21 @@ uid<- new_data %>%
   pivot_longer(-ID, names_to = "variable", values_to = "value") %>%
   mutate(variable = sub("YEMP_UID.", "EmpID-", variable),
          variable = sub("YEMP-INDCODE-2002.", "IND-", variable),
-         variable = sub("YEMP_INDCODE-2002", "IND-", variable),
-         variable = sub("YEMP_OCCCODE-2002", "OCC-", variable),
-         variable = sub("YEMP_OCCODE-2002", "OCC-", variable),
+         variable = sub("YEMP_INDCODE-2002.", "IND-", variable),
+         variable = sub("YEMP_OCCCODE-2002.", "OCC-", variable),
+         variable = sub("YEMP_OCCODE-2002.", "OCC-", variable),
          variable = sub("YEMP-OCCCODE-2002.", "OCC-", variable),
          variable = sub("YEMP-101100.", "Union-", variable),
          variable = sub("YEMP-58400.", "Reason-", variable),
          name = str_split_i(variable, "-", 1),
          Year = str_split_i(str_split_i(variable, "-", 2), "_", 2),
          Job = str_split_i(str_split_i(variable, "-", 2), "_", 1)) %>%
-  pivot_wider(id_cols=c("ID", "Year", "Job"), names_from = "name", values_from = "value", values_fill = NA) %>%
-  distinct(ID, EmpID, .keep_all=TRUE) %>%
-  filter(!is.na(EmpID))
+  select(-variable) %>%
+  pivot_wider(id_cols=c("ID", "Year", "Job"), names_from = name, values_from = value) %>%
+  mutate(EmpID = as.character(EmpID))%>%
+  filter(!is.na(EmpID)) %>%
+  distinct(ID, EmpID, .keep_all=TRUE) 
+
 
 
 IOU<-uid %>%
@@ -83,8 +86,7 @@ IOU<-uid %>%
           IND >=8770 & IND <= 9290        ~ "SRV",
           IND >=9370 & IND <= 9590        ~ "ADM",
           IND >=9670 & IND <= 9890        ~ "ARM",
-          TRUE                            ~ "OTH")) %>%
-  replace_na(list(Union = 0))
+          TRUE                            ~ "OTH"))
 
 
 save(IOU,file="./Build/Input/OCC_IND.RData")
