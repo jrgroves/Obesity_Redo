@@ -142,7 +142,7 @@ gaps <- gaps %>%
 save(gaps,file="./Build/Output/gaps97.RData")  
 
 
-source('~/Projects/Obesity_Redo/Build/Code/NLSY Code/Search.R')
+source('./Build/Code/NLSY Code/Search.R')
 
 search<-new_data %>%
   rename(ID=PUBID_1997) %>%
