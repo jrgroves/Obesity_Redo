@@ -34,16 +34,20 @@ uid<- new_data %>%
 
 
 IOU<-uid %>%
-  mutate(Reason = case_when(
+  mutate(Term = case_when(
+          Reason == 1 ~ "Layoff",
+          Reason == 2 ~ "Job End",
+          Reason == 3 ~ "Job End",
           Reason == 4 ~ "Forced",
+          Reason == 5 ~ "Job End",
+          Reason > 5 & Reason < 12 ~ "Quit",
+          Reason == 13 ~ "Illness",
           Reason == 22 ~ "Retired",
           Reason == 16 | Reason == 20 ~ "Illness",
-          Reason == 14 ~ "Prison",
-          Reason < 4 ~ "Ended",
-          Reason > 4 & Reason < 14 ~ "Quit",
           Reason == 21 ~ "Quit",
-          Reason > 22 ~ "Quit")) %>%
-  replace_na(list(Reason="Unknown")) %>%
+          Reason > 22 ~ "Quit",
+          TRUE ~ "Other")) %>%
+  replace_na(list(Term="Unknown")) %>%
   mutate(OCC2 = case_when(
           OCC <= 430                   ~ "11",
           OCC > 430 & OCC <= 730       ~ "13",

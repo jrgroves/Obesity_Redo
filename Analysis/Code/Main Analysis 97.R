@@ -6,7 +6,7 @@
 #longer a possibility. Changed to cox proportional model using coxme with mixed effects
 #in terms of the frailty of ID. Also utilized factor approach on factor variables.
 
-#Modified December 19, 2022: Making correction for revise and resubmit.
+#Modified December 19, 2022: Making correction for revise and resubmit. This is the file to use
 
 
 rm(list=ls())
@@ -50,12 +50,14 @@ main <- core %>%
           Health = relevel(Health, ref="Good"),
           Marriage = factor(Marriage),
           Marriage = relevel(Marriage, ref="NeverMarried"),
-          Term = factor(Reason),
-          Term = relevel(Term, ref="Unknown"),
           OCC2 = case_when(is.na(OCC2) ~ "00",
                            TRUE ~ OCC2),
           IND2 = case_when(is.na(IND2) ~ "OTH",
                            TRUE ~ IND2),
+          Term = case_when(is.na(Term) ~ "Unknown",
+                          TRUE ~ Term),
+          Term = factor(Term),
+          Term = relevel(Term, ref="Unknown"),
           OCC2 = factor(OCC2),
           OCC2 = relevel(OCC2, ref="00"),
           IND2 = factor(IND2),

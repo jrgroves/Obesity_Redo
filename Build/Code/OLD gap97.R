@@ -126,7 +126,7 @@ save(gaps,file="./Build/Output/gaps97.RData")
 load("./Build/Input/OCC_IND.RData")
 
 IOU <- IOU %>%
-  select(ID, Union, EmpID, IND, OCC, IND2, OCC2)
+  select(ID, Union, EmpID, IND, OCC, IND2, OCC2, Term)
 
 gaps <- gaps %>%
   mutate(Reason = case_when(EmpID == 5 ~ "Left Workforce",
