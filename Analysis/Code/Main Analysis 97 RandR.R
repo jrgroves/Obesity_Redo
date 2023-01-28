@@ -25,9 +25,9 @@ main <- core %>%
   filter(Race != "Mixed") %>%
   mutate(Gender = factor(Gender),
          Gender = relevel(Gender, ref="Male"),
-         BMI_Level = factor(BMI_Level, level=c("Normal","Overweight","Obese", "Underweight")),
+         BMI_Level = factor(BMI_Level, level=c("Underweight","Normal","Overweight","Obese")),
          BMI_Level = relevel(BMI_Level, ref="Normal"),
-         BMI_Level_L = factor(BMI_Level_L, level=c("Normal","Overweight","Obese", "Underweight")),
+         BMI_Level_L = factor(BMI_Level_L, level=c("Underweight","Normal","Overweight","Obese")),
          BMI_Level_L = relevel(BMI_Level_L, ref="Normal"),
          Race = factor(Race),
          Race = relevel(Race, ref="White")) %>%
@@ -57,7 +57,14 @@ main <- core %>%
          IND2 = factor(IND2),
          IND2 = relevel(IND2, ref="OTH"),
          Union = ifelse(is.na(Union),0,Union),
-         Exp = ifelse(is.na(Exp), 0, Exp))
+         Exp = ifelse(is.na(Exp), 0, Exp),
+         Expa = Exp,
+         Tena = Ten,
+         Exp = Tena,
+         Ten = Expa,
+         Plan = factor(Plan),
+         Plan = relevel(Plan, ref="4")) %>%
+  select(!Tena, !Expa)
 
 
 
@@ -72,22 +79,60 @@ main <- main %>%
          !is.na(Education),
          !is.na(Health),
          !is.na(GFinc),
-         !is.na(Ten),
+         !is.na(Exp),
          !is.na(Score),
          !is.na(Marriage),
          !is.na(Child6),
          !is.na(URATE),
+         !is.na(Plan),
          length > 0)
 
 main<-main %>%
   select(-Year.x, -Health.raw, -Weight.r, -URBAN, -Height.r, -Year.y) %>%
-  filter(((Age-16)*52) > Ten) %>%
+  filter(((Age-16)*52) > Exp) %>%
+  filter(Ten <= Exp) %>%
   mutate(Ovr21 = case_when(Age <= 21 ~ 0,
                            Age > 21 ~ 1))
 
 
 rm(core, core.cont, core.s, gaps)
 
+#Summary Statistics for Paper
+
+a<-as.data.frame(model.matrix(~Gender - 1, data=main))
+b<-as.data.frame(model.matrix(~BMI_Level - 1, data=main))
+c<-as.data.frame(model.matrix(~Race - 1, data=main))
+d<-as.data.frame(model.matrix(~Region - 1, data=main))
+e<-as.data.frame(model.matrix(~Marriage - 1, data=main))
+f<-as.data.frame(model.matrix(~Health - 1, data=main))
+g<-as.data.frame(model.matrix(~Education - 1, data=main))
+h<-as.data.frame(model.matrix(~Term - 1, data=main))
+i<-as.data.frame(model.matrix(~Plan - 1, data=main))
+
+sumfac<-main %>%
+  select(ID,length, BMI, Age, Ovr21, Child6, HH_Size, GFinc, URATE,
+         Score,SearchCT, Ten, Exp, Union)
+sumfac<-as.data.frame(cbind(sumfac,a,b,c,d,e,f,g,h,i))
+
+
+rm(a,b,c,d,e,f,g,h,i)
+
+stargazer(sumfac, subset(sumfac, GenderFemale==1), subset(sumfac, GenderMale==1),
+          type="text", out="./Analysis/Output/full.txt")
+
+
+stargazer(sumfac, subset(sumfac, BMI_LevelNormal==1), subset(sumfac, BMI_LevelOverweight==1), 
+          subset(sumfac, BMI_LevelObese==1), subset(sumfac, BMI_LevelUnderweight == 1),
+          type="text",out="./Analysis/Output/obesity.txt")
+
+
+stargazer(subset(sumfac, RaceWhite==1), subset(sumfac, RaceBlack==1), subset(sumfac, RaceHispanic==1),
+          type="text",out="./Analysis/Output/race.txt")
+
+
+temp <- main %>%
+  filter(BMI_Level=="Obese") %>%
+  distinct(ID)
 
 
 #Function to output results from both coxph and coxme
@@ -118,52 +163,82 @@ mod1L.fr<-coxme(Surv(length, event)~BMI_Level_L+(1|ID), data=subset(submain, !is
 
 #Addition of individual specific elements
 
-mod2<-coxph(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
-              Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region,
+mod2<-coxph(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
+              Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan,
             data=submain)
 
-mod2.fr<-coxme(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
-                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+(1|ID),
+mod2.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
+                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+(1|ID),
                data=submain)
-mod2.fr.int<-coxme(Surv(length, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+Ovr21+
-                     Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+(1|ID),
+mod2.fr.int<-coxme(Surv(length, event)~BMI_Level+Gender+Race+BMI_Level*Race+Marriage+Education+Ovr21+
+                     Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+(1|ID),
                    data=submain)
 
 #Addition of Industry, Occupation, and Economy
 
-
-mod3<-coxph(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
-              Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+mod3<-coxph(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
+              Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
               URATE+SearchCT+Term,
             data=submain)
 
-mod3.fr<-coxme(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
-                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+mod3.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
+                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                  URATE+SearchCT+Term+(1|ID),
                data=submain)
 
-mod3.fr.int<-coxme(Surv(length, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+Ovr21+
-                     Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+mod3.fr.int<-coxme(Surv(length, event)~BMI_Level+Gender+Race+BMI_Level*Race+Marriage+Education+Ovr21+
+                     Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                      URATE+SearchCT+Term+(1|ID),
                    data=submain)
 
-mod4<-coxph(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
-              Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-              URATE+SearchCT+Term+Union+OCC2+IND2,
+mod4<-coxph(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
+              Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
+              URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
             data=submain)
 
-mod4.fr<-coxme(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
+mod4.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
                  Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                 URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
+                 URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
                data=submain)
 
-mod4.fr.int<-coxme(Surv(length, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+Ovr21+
+mod4.fr.int<-coxme(Surv(length, event)~BMI_Level+Gender+Race+BMI_Level*Race+Marriage+Education+Ovr21+
                      Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                     URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), data=submain)
+                     URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), data=submain)
 
-base <- save(mod4.fr.int, mod4.fr, mod3.fr.int, mod3.fr, mod4, mod3, file="./Analysis/Output/Base.RData")
+submain<-main %>%
+  filter(Gender=="Female") %>%
+  mutate(OCC2 = droplevels(OCC2),
+         IND2 = droplevels(IND2))
+
+mod4F.fr<-coxme(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
+                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                 URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
+               data=submain)
+
+mod4F.fr.int<-coxme(Surv(length, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+Ovr21+
+                     Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                     URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), data=submain)
+
+
+submain<-main %>%
+  filter(Gender=="Male") %>%
+  mutate(OCC2 = droplevels(OCC2),
+         IND2 = droplevels(IND2))
+
+mod4M.fr<-coxme(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
+                  Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                  URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
+                data=submain)
+
+mod4M.fr.int<-coxme(Surv(length, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+Ovr21+
+                      Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                      URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), data=submain)
+
 out1<-summe(mod4.fr.int, mod4.fr, mod3.fr.int, mod3.fr)
+out2 <-summe(mod4F.fr.int, mod4M.fr.int, mod4F.fr, mod4M.fr)
 
+base <- save(mod4.fr.int, mod4.fr, mod3.fr.int, mod3.fr, mod4F.fr, mod4F.fr.int, mod4M.fr, mod4M.fr.int,
+             file="./Analysis/Output/Base.RData")
 
 black<-main %>%
   subset(Race == "Black") %>%
@@ -171,24 +246,24 @@ black<-main %>%
          IND2 = droplevels(IND2))
   
 
-mod3<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
-              Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+mod3<-coxph(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
+              Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
               URATE+SearchCT+Term,
             data=black)
 
 mod3.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
-                 Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                 Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                  URATE+SearchCT+Term+(1|ID),
                data=black)
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
-              Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-              URATE+SearchCT+Term+Union+OCC2+IND2,
+              Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
+              URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
             data=black)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                 URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
+                 URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
                data=black)
 save(mod3, mod3.fr, mod4, mod4.fr, file="./Analysis/Output/black_all.RData")
 
@@ -200,23 +275,23 @@ black<-main %>%
          IND2 = droplevels(IND2))
 
 mod3<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
-               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                URATE+SearchCT+Term,
              data=black)
 
 mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
-                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                   URATE+SearchCT+Term+(1|ID),
                 data=black)
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2,
+               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
              data=black)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
                   Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                  URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID)+(1|Ovr21), 
+                  URATE+SearchCT+Term+Union+OCC2+IND2+Plan+Plan+(1|ID), 
                 data=black)
 
 save(mod3, mod3.fr, mod4, mod4.fr, file="./Analysis/Output/black_female.RData")
@@ -229,23 +304,23 @@ black<-main %>%
          IND2 = droplevels(IND2))
 
 mod3<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
-               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                URATE+SearchCT+Term,
              data=black)
 
 mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
-                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                   URATE+SearchCT+Term+(1|ID),
                 data=black)
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2,
+               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
              data=black)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
                   Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                  URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
+                  URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
                 data=black)
 
 save(mod3, mod3.fr, mod4, mod4.fr, file="./Analysis/Output/black_male.RData")
@@ -259,23 +334,23 @@ white<-main %>%
          IND2 = droplevels(IND2))
 
 mod3<-coxph(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
-               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                URATE+SearchCT+Term,
              data=white)
 
 mod3.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
-                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                   URATE+SearchCT+Term+(1|ID),
                 data=white)
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2,
+               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
              data=white)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
                   Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                  URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
+                  URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
                 data=white)
 
 save(mod3, mod3.fr, mod4, mod4.fr, file="./Analysis/Output/white_all.RData")
@@ -288,23 +363,23 @@ white<-main %>%
          IND2 = droplevels(IND2))
 
 mod3<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
-               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                URATE+SearchCT+Term,
              data=white)
 
 mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
-                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                   URATE+SearchCT+Term+(1|ID),
                 data=white)
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2,
+               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
              data=white)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
                   Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                  URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
+                  URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
                 data=white)
 
 save(mod3, mod3.fr, mod4, mod4.fr, file="./Analysis/Output/white_female.RData")
@@ -317,23 +392,23 @@ white<-main %>%
          IND2 = droplevels(IND2))
 
 mod3<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
-                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                 URATE+SearchCT+Term,
               data=white)
 
 mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
-                   Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                   Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                    URATE+SearchCT+Term+(1|ID),
                  data=white)
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                 Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                URATE+SearchCT+Term+Union+OCC2+IND2,
+                URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
               data=white)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
                    Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                   URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
+                   URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
                  data=white)
 
 save(mod3, mod3.fr, mod4, mod4.fr, file="./Analysis/Output/white_male.RData")
@@ -346,23 +421,23 @@ hispan<-main %>%
          IND2 = droplevels(IND2))
 
 mod3<-coxph(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
-               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                URATE+SearchCT+Term,
              data=hispan)
 
 mod3.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
-                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                   URATE+SearchCT+Term+(1|ID),
                 data=hispan)
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2,
+               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
              data=hispan)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
                   Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                  URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
+                  URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
                 data=hispan)
 save(mod3, mod3.fr, mod4, mod4.fr, file="./Analysis/Output/hispan_all.RData")
 
@@ -374,23 +449,23 @@ hispan<-main %>%
          IND2 = droplevels(IND2))
 
 mod3<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
-               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                URATE+SearchCT+Term,
              data=hispan)
 
 mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
-                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                   URATE+SearchCT+Term+(1|ID),
                 data=hispan)
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2,
+               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
              data=hispan)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
                   Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                  URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
+                  URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
                 data=hispan)
 save(mod3, mod3.fr, mod4, mod4.fr, file="./Analysis/Output/hispan_female.RData")
 
@@ -402,40 +477,41 @@ hispan<-main %>%
          IND2 = droplevels(IND2))
 
 mod3<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
-               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                URATE+SearchCT+Term,
              data=hispan)
 
 mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
-                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                   URATE+SearchCT+Term+(1|ID),
                 data=hispan)
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2,
+               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
              data=hispan)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
                   Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                  URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
+                  URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
                 data=hispan)
 
 save(mod3, mod3.fr, mod4, mod4.fr, file="./Analysis/Output/hispan_male.RData")
+save.image(file="./Analysis/Output/MainAnalysis.RData")
 
 outHM<-summe(mod4.fr, mod4, mod3.fr, mod3)
 
 
-write.csv(out1, file="./Analysis/Output/base.txt")
-write.csv(outB, file="./Analysis/Output/outB.txt")
-write.csv(outBF, file="./Analysis/Output/outBF.txt")
-write.csv(outBM, file="./Analysis/Output/outBM.txt")
-write.csv(outW, file="./Analysis/Output/outW.txt")
-write.csv(outWF, file="./Analysis/Output/outWF.txt")
-write.csv(outWM, file="./Analysis/Output/outWM.txt")
-write.csv(outH, file="./Analysis/Output/outH.txt")
-write.csv(outHF, file="./Analysis/Output/outHF.txt")
-write.csv(outHM, file="./Analysis/Output/outHM.txt")
+write.csv(out1, file="./Analysis/Output/base.csv")
+write.csv(out2, file="./Analysis/Output/base2.csv")
+write.csv(outB, file="./Analysis/Output/outB.csv")
+write.csv(outBF, file="./Analysis/Output/outBF.csv")
+write.csv(outBM, file="./Analysis/Output/outBM.csv")
+write.csv(outW, file="./Analysis/Output/outW.csv")
+write.csv(outWF, file="./Analysis/Output/outWF.csv")
+write.csv(outWM, file="./Analysis/Output/outWM.csv")
+write.csv(outH, file="./Analysis/Output/outH.csv")
+write.csv(outHF, file="./Analysis/Output/outHF.csv")
+write.csv(outHM, file="./Analysis/Output/outHM.csv")
 
-submain<-main %>%
-  subset(length > 26)
+

@@ -9,6 +9,7 @@ library(survival)
 library(coxme)
 library(lme4)
 library(data.table)
+library(broom)
 
 #Load constructed data and create core analysis data
 load("./Build/Output/gaps97.RData")
@@ -16,6 +17,7 @@ load("./Build/Output/gaps97.RData")
     #Creation of Logit Time variable
     b<-gaps %>%
       arrange(ID, Spell.Num) %>%
+      filter(length > 0) %>%
       uncount(length) %>%
       group_by(ID, Spell.Num) %>%
       mutate(count = rowid(ID, Spell.Num),
@@ -37,9 +39,9 @@ main <- core %>%
   filter(Race != "Mixed") %>%
   mutate(Gender = factor(Gender),
          Gender = relevel(Gender, ref="Male"),
-         BMI_Level = factor(BMI_Level, level=c("Normal","Overweight","Obese", "Underweight")),
+         BMI_Level = factor(BMI_Level, level=c("Underweight","Normal","Overweight","Obese")),
          BMI_Level = relevel(BMI_Level, ref="Normal"),
-         BMI_Level_L = factor(BMI_Level_L, level=c("Normal","Overweight","Obese", "Underweight")),
+         BMI_Level_L = factor(BMI_Level_L, level=c("Underweight","Normal","Overweight","Obese")),
          BMI_Level_L = relevel(BMI_Level_L, ref="Normal"),
          Race = factor(Race),
          Race = relevel(Race, ref="White")) %>%
@@ -69,7 +71,14 @@ main <- core %>%
          IND2 = factor(IND2),
          IND2 = relevel(IND2, ref="OTH"),
          Union = ifelse(is.na(Union),0,Union),
-         Exp = ifelse(is.na(Exp), 0, Exp))
+         Exp = ifelse(is.na(Exp), 0, Exp),
+         Expa = Exp,
+         Tena = Ten,
+         Exp = Tena,
+         Ten = Expa,
+         Plan = factor(Plan),
+         Plan = relevel(Plan, ref="4")) %>%
+  select(!Tena, !Expa)
 
 
 
@@ -84,20 +93,40 @@ main <- main %>%
          !is.na(Education),
          !is.na(Health),
          !is.na(GFinc),
-         !is.na(Ten),
+         !is.na(Exp),
          !is.na(Score),
          !is.na(Marriage),
          !is.na(Child6),
-         !is.na(URATE))
+         !is.na(URATE),
+         !is.na(Plan))
 
 main<-main %>%
   select(-Year.x, -Health.raw, -Weight.r, -URBAN, -Height.r, -Year.y) %>%
-  filter(((Age-16)*52) > Ten) %>%
+  filter(((Age-16)*52) > Exp) %>%
+  filter(Ten <= Exp) %>%
   mutate(Ovr21 = case_when(Age <= 21 ~ 0,
                            Age > 21 ~ 1))
 
 
-rm(core, core.cont, core.s, gaps, unemp)
+rm(core, core.cont, core.s, gaps)
+
+#Function for reporting Results
+
+
+summe<-function(d, c, b, a){
+  
+  temp <- as_tibble(tidy(d)[,c(1:3, 5)])
+  temp2 <- tidy(c)[,c(1:3, 5)]
+  temp3 <- as_tibble(tidy(b)[,c(1:3, 5)])
+  temp4 <- tidy(a)[,c(1:3, 5)]
+  
+  out<-left_join(temp, temp2, by= "term") %>%
+    left_join(., temp3, by= "term") %>%
+    left_join(., temp4, by= "term")
+  
+  return(out)
+}
+
 
 #Modeling
 
@@ -105,46 +134,27 @@ mod1<-glm(ended ~ BMI_Level + count, data=main, family = binomial())
 mod1L<-glm(ended ~ BMI_Level_L + count, data=subset(main, !is.na(BMI_Level_L)), family = binomial())
 
 
-mod2<-glm(ended ~ BMI_Level + Race + Marriage + Education + Ovr21 +
+mod2<-glm(ended ~ BMI_Level + Gender + Race + Marriage + Education + Plan + Ovr21 +
                   Age + Child6 + GFinc + HH_Size + Score + Ten + Exp +
                   Health + Region + count, data=main, family = binomial())
 
-#mod2.fr<-coxme(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
-#                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+(1|ID),
-#               data=submain)
 
 #Addition of Industry, Occupation, and Economy
 
-mod3<-glm(ended ~ BMI_Level + Race + Marriage + Education + Ovr21 +
+mod3<-glm(ended ~ BMI_Level + Gender + Race + Marriage + Education + Plan + Ovr21 +
                   Age + Child6 + GFinc + HH_Size + Score + Ten + Exp + 
                   Health + Region + URATE + SearchCT + Term + count, data=main, family = binomial())
 
-#mod3.fr<-coxme(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
-#                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-#                 URATE+SearchCT+Term+(1|ID),
-#               data=submain)
-
-#mod3.fr.int<-coxme(Surv(length, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+Ovr21+
-#                     Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-#                     URATE+SearchCT+Term+(1|ID),
-#                   data=submain)
-
-mod4<-glm(ended ~ BMI_Level + Race + Marriage + Education + Ovr21 +
+mod4<-glm(ended ~ BMI_Level + Gender + Race + Marriage + Education + Plan + Ovr21 +
                   Age + Child6 + GFinc + HH_Size + Score + Ten + Exp +
                   Health + Region + URATE + SearchCT + Term + Union + 
                   OCC2 + IND2 + count, data = main, family = binomial())
             
-
-#mod4.fr<-coxme(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
-##                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-#                 URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
-#               data=submain)
-
-#mod4.fr.int<-coxme(Surv(length, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+Ovr21+
-##                     Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-#                     URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), data=submain)
+main.mod<-summe(mod4, mod3, mod2, mod1)
 
 base <- save(mod4, mod3, mod2, mod1L, mod1, file="./Analysis/Output/Base.RData")
+
+#Estimations by Race and Race-Gender
 
 black<-main %>%
   subset(Race == "Black") %>%
@@ -153,11 +163,11 @@ black<-main %>%
          count = droplevels(count))
 
 
-mod3B<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod3B<-glm(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
                   GFinc + HH_Size + Score + Ten + Exp + Health + Region +
                   URATE + SearchCT + Term + count, data=black, family=binomial())
 
-mod4B<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod4B<-glm(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
             GFinc + HH_Size + Score + Ten + Exp + Health + Region +
             URATE + SearchCT + Term + Union + OCC2 + IND2 + count, data=black, family=binomial())
   
@@ -167,11 +177,11 @@ black<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3BF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod3BF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count, data=black, family=binomial())
 
-mod4BF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod4BF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count, data=black, family=binomial())
 
@@ -181,13 +191,15 @@ black<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3BM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod3BM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count, data=black, family=binomial())
 
-mod4BM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod4BM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count, data=black, family=binomial())
+
+black.mod<-summe(mod4B, mod4BF, mod4BM, mod3B)
 
 white<-main %>%
   subset(Race == "White")%>%
@@ -195,11 +207,11 @@ white<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3W<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod3W<-glm(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count, data=white, family=binomial())
 
-mod4W<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod4W<-glm(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count, data=white, family=binomial())
 
@@ -209,11 +221,11 @@ white<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3WF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod3WF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count, data=white, family=binomial())
 
-mod4WF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod4WF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count, data=white, family=binomial())
 
@@ -223,13 +235,15 @@ white<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3WM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod3WM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count, data=white, family=binomial())
 
-mod4WM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod4WM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count, data=white, family=binomial())
+
+white.mod<-summe(mod4W, mod4WF, mod4WM, mod3W)
 
 hispan<-main %>%
   subset(Race == "Hispanic")%>%
@@ -237,11 +251,11 @@ hispan<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3H<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod3H<-glm(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count, data=hispan, family=binomial())
 
-mod4H<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod4H<-glm(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count, data=hispan, family=binomial())
 
@@ -251,11 +265,11 @@ hispan<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3HF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod3HF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count, data=hispan, family=binomial())
 
-mod4HF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod4HF<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count, data=hispan, family=binomial())
 
@@ -265,10 +279,19 @@ hispan<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3HM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod3HM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count, data=hispan, family=binomial())
 
-mod4HM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
+mod4HM<-glm(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count, data=hispan, family=binomial())
+
+hispan.mod<-summe(mod4H, mod4HF, mod4HM, mod3H)
+
+save.image(file="./Analysis/Output/Logit.RData")
+
+write.csv(main.mod, file="./Analysis/Output/log_main.csv")
+write.csv(black.mod, file="./Analysis/Output/log_black.csv")
+write.csv(white.mod, file="./Analysis/Output/log_white.csv")
+write.csv(hispan.mod, file="./Analysis/Output/log_hispan.csv")
