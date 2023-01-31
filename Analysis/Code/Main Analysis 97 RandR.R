@@ -151,60 +151,138 @@ summe<-function(d, c, b, a){
   return(out)
 }
 
+#K-M Nonparameter Curve Graphs
+
+fit <- survfit(Surv(length, event) ~ BMI_Level, data = main)
+ggsurvplot(fit, 
+           data=main, 
+           conf.int = FALSE,
+           #conf.int.style = "step",
+           xlim = c(0, 30),
+           xlab = "Time in weeks",
+           break.time.by = 2,
+           surv.median.line = "hv",
+           legend.labs = c("Underweight", "Normal", "Overweight", "Obese"),
+           title = "Figure 1:K-M Survival by BMI Level",
+           palette = "grey",
+           linetype = c(4, 1, 2, 3),
+           theme = theme_bw())
+
+fit <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Gender=="Female"))
+ggsurvplot(fit, 
+           data=subset(main, Gender=="Female"), 
+           conf.int = FALSE,
+           #conf.int.style = "step",
+           xlim = c(0, 30),
+           xlab = "Time in weeks",
+           break.time.by = 2,
+           surv.median.line = "hv",
+           legend.labs = c("Underweight", "Normal", "Overweight", "Obese"),
+           title = "Figure 2:K-M Survival for Females by BMI Level",
+           palette = "grey",
+           linetype = c(4, 1, 2, 3),
+           theme = theme_bw())
+
+fit <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Gender=="Male"))
+ggsurvplot(fit, 
+           data=subset(main, Gender=="Male"), 
+           conf.int = FALSE,
+           #conf.int.style = "step",
+           xlim = c(0, 30),
+           xlab = "Time in weeks",
+           break.time.by = 2,
+           surv.median.line = "hv",
+           legend.labs = c("Underweight", "Normal", "Overweight", "Obese"),
+           title = "Figure 3:K-M Survival for Males by BMI Level",
+           palette = "grey",
+           linetype = c(4, 1, 2, 3),
+           theme = theme_bw())
+
+fit.W <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="White"))
+fit.WF <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="White" & Gender=="Female"))
+fit.WM <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="White" & Gender=="Male"))
+fit.B <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="Black"))
+fit.BF <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="Black" & Gender=="Female"))
+fit.BM <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="Black" & Gender=="Male"))
+fit.H <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="Hispanic"))
+fit.HF <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="Hispanic" & Gender=="Female"))
+fit.HM <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="Hispanic" & Gender=="Male"))
+
 #Limit sample to only those over the age of 21 at the start of the spell
 
-submain<-main 
+mod1<-coxph(Surv(length, event)~BMI_Level, data=main)
+mod1L<-coxph(Surv(length, event)~BMI_Level_L, data=subset(main, !is.na(BMI_Level_L)))
 
-mod1<-coxph(Surv(length, event)~BMI_Level, data=submain)
-mod1L<-coxph(Surv(length, event)~BMI_Level_L, data=subset(submain, !is.na(BMI_Level_L)))
-
-mod1.fr<-coxme(Surv(length, event)~BMI_Level+(1|ID), data=submain)
-mod1L.fr<-coxme(Surv(length, event)~BMI_Level_L+(1|ID), data=subset(submain, !is.na(BMI_Level_L)))
+mod1.fr<-coxme(Surv(length, event)~BMI_Level+(1|ID), data=main)
+mod1L.fr<-coxme(Surv(length, event)~BMI_Level_L+(1|ID), data=subset(main, !is.na(BMI_Level_L)))
 
 #Addition of individual specific elements
 
 mod2<-coxph(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
               Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan,
-            data=submain)
+            data=main)
 
 mod2.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
-                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+(1|ID),
-               data=submain)
+                     Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+(1|ID),
+                   data=main)
+
 mod2.fr.int<-coxme(Surv(length, event)~BMI_Level+Gender+Race+BMI_Level*Race+Marriage+Education+Ovr21+
                      Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+(1|ID),
-                   data=submain)
+                   data=main)
 
 #Addition of Industry, Occupation, and Economy
 
 mod3<-coxph(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
               Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
               URATE+SearchCT+Term,
-            data=submain)
+            data=main)
 
 mod3.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
                  Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                  URATE+SearchCT+Term+(1|ID),
-               data=submain)
+               data=main)
 
 mod3.fr.int<-coxme(Surv(length, event)~BMI_Level+Gender+Race+BMI_Level*Race+Marriage+Education+Ovr21+
                      Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
                      URATE+SearchCT+Term+(1|ID),
-                   data=submain)
+                   data=main)
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
               Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
-            data=submain)
+            data=main)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
                  Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
                  URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
-               data=submain)
+               data=main)
 
 mod4.fr.int<-coxme(Surv(length, event)~BMI_Level+Gender+Race+BMI_Level*Race+Marriage+Education+Ovr21+
                      Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                     URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), data=submain)
+                     URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), data=main)
 
+#Estimate with lagged BMI Classification
+
+submain <- main %>%
+  filter(!is.na(BMI_Level_L))
+
+mod1L.fr<-coxme(Surv(length, event)~BMI_Level_L+(1|ID), data=submain)
+
+mod2L.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
+                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+(1|ID),
+               data=submain)
+
+mod3L.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
+                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+
+                 URATE+SearchCT+Term+(1|ID),
+               data=submain)
+
+mod4L.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
+                 Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                 URATE+SearchCT+Term+Union+OCC2+IND2+Plan+(1|ID), 
+               data=submain)
+
+#Female Subsample
 submain<-main %>%
   filter(Gender=="Female") %>%
   mutate(OCC2 = droplevels(OCC2),
@@ -238,7 +316,7 @@ out1<-summe(mod4.fr.int, mod4.fr, mod3.fr.int, mod3.fr)
 out2 <-summe(mod4F.fr.int, mod4M.fr.int, mod4F.fr, mod4M.fr)
 
 base <- save(mod4.fr.int, mod4.fr, mod3.fr.int, mod3.fr, mod4F.fr, mod4F.fr.int, mod4M.fr, mod4M.fr.int,
-             file="./Analysis/Output/Base.RData")
+             file="./Analysis/Output/BaseRR.RData")
 
 black<-main %>%
   subset(Race == "Black") %>%
@@ -502,8 +580,8 @@ save.image(file="./Analysis/Output/MainAnalysis.RData")
 outHM<-summe(mod4.fr, mod4, mod3.fr, mod3)
 
 
-write.csv(out1, file="./Analysis/Output/base.csv")
-write.csv(out2, file="./Analysis/Output/base2.csv")
+write.csv(out1, file="./Analysis/Output/base.csv") #Full Sample
+write.csv(out2, file="./Analysis/Output/base2.csv") #Sample by Gender
 write.csv(outB, file="./Analysis/Output/outB.csv")
 write.csv(outBF, file="./Analysis/Output/outBF.csv")
 write.csv(outBM, file="./Analysis/Output/outBM.csv")
