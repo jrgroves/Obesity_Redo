@@ -7,7 +7,7 @@ rm(list=ls())
 library(tidyverse)
 library(data.table)
 
-source("./Build/Code/Gaps97.R")
+source("./Build/Code/NLSY Code/Gaps97.R")
 
 rm(list=c("qnames","vallabels","varlabels"))
 

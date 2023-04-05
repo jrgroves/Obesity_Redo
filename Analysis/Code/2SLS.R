@@ -20,8 +20,8 @@ mod1B<-coxph(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
 mod2A<-coxph(Surv(length, event)~BMI+Gender+Race+Marriage+Education+Ovr21+
                Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region, data=submain)
 
-mod2B<-coxph(Surv(length, event)~BMI+Gender+Race+Marriage+Education+Ovr21+
-               Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan, data=submain)
+mod2B<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
+               Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+(1|ID), data=submain)
 
 #First Stage
 x<-lm(BMI ~ P1.BMI+Plan+Gender+Race+BMI_Level*Race+Marriage+Education+Ovr21+
@@ -41,8 +41,8 @@ submain <- submain %>%
 
 
 modA.2sls<-coxph(Surv(length, event)~BMI_Level2+Gender+Race+Marriage+Education+Ovr21+
-             Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan, data=submain)
-
-modB.2sls<-coxph(Surv(length, event)~BMI_Level2+Gender+Race+Marriage+Education+Ovr21+
              Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region, data=submain)
+
+mod2B.sls<-coxme(Surv(length, event)~BMI_Level2+Gender+Race+Marriage+Education+Ovr21+
+               Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+Plan+(1|ID), data=submain)
 

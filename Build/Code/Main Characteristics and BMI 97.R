@@ -11,7 +11,7 @@ library(zoo) #Contains the Interpolation command
 library(measurements)
 
 #Loading extra characteristics added later
-source("./Build/Code/Weight.R")
+source("./Build/Code/NLSY Code/Weight.R")
 rm(varlabels, qnames, vallabels, vallabels_continuous)
 
 #Create Main Time Consistent Characteristics
@@ -78,7 +78,7 @@ variable <- core %>%
 
 #Calculates missing weights and heights and BMI         
 variable <- variable  %>%
-  filter(Year < 2012) %>% #Limits data to 2011 due to survey changing to every two
+  #filter(Year < 2012) %>% #Limits data to 2011 due to survey changing to every two
   group_by(ID) %>%
   mutate(Weight = replace(Weight, Weight <= 30, NA),
          Weight = replace(Weight, Weight == 999, NA), #Removes weights less than 30 pounds which are clear errors and equal to 999
@@ -90,8 +90,8 @@ variable <- variable  %>%
          Height = replace(Height, zh < -2.5, NA),
          Height = replace(Height, zh > 2.5, NA)) %>%
   arrange(ID, Year) %>%
-  mutate(Weight2 = na.approx(Weight, maxgap = 13, rule = 2),
-         Height2 = na.approx(Height, maxgap = 13, rule = 2),
+  mutate(Weight2 = na.approx(Weight, maxgap = 19, rule = 2),
+         Height2 = na.approx(Height, maxgap = 19, rule = 2),
          Height.r = conv_unit(Height, "inch", "m"),
          Weight.r = conv_unit(Weight, "lbs", "kg"),
          BMI.r = Weight.r/((Height.r)^2),

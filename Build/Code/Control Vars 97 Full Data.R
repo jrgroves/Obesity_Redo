@@ -2,10 +2,12 @@
 #By Jeremy Groves
 #January 26, 2021
 
+#UPDATE April 3, 2023: Added code to fill in data from missing survey years. Used previous year information
 
 rm(list=ls())
 
 library(tidyverse)
+library(zoo)
 
 source('./Build/Code/NLSY Code/Controls1.R')
 
@@ -114,6 +116,38 @@ core.cont<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                        core.hhs, core.wage, core.othinc, core.ur,
                        core.mar))
 core.cont$Year <- as.numeric(core.cont$Year)
+
+core.cont
+save(core.cont,file="./Build/OUtput/Controls97FD_nofill.RData")
+
+#Add this section to fill in missing values from missing survey years
+ID<-seq(1, max(core.cont$ID), 1)
+
+fill<-ID %>%
+  data.frame(ID=.) %>%
+  slice(rep(1:n(), each = 24)) %>%
+  group_by(ID) %>%
+  mutate(Year = seq(1997,2020,1)) %>%
+  full_join(., core.cont, by = c("ID", "Year")) %>%
+  arrange(ID, Year) %>%
+  fill(everything())
+
+core.cont <- fill
+save(core.cont,file="./Build/OUtput/Controls97FD_fill.RData")
+
+fill<-ID %>%
+  data.frame(ID=.) %>%
+  slice(rep(1:n(), each = 24)) %>%
+  group_by(ID) %>%
+  mutate(Year = seq(1997,2020,1)) %>%
+  full_join(., core.cont, by = c("ID", "Year")) %>%
+  arrange(ID, Year) %>%
+  mutate(Child6.i = round(na.approx(Child6, maxgap=5, rule = 2),0),
+         HH_Size.i = round(na.approx(HH_Size, maxgap=5, rule=2),0),
+         GFinc.i = na.approx(GFinc, maxgap=22, rule=2))
+
+core.cont <- fill
+save(core.cont,file="./Build/OUtput/Controls97FD_i.RData")
 
 #Pull Out the Cong. Score#
 
