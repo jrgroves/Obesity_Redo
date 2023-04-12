@@ -72,25 +72,30 @@ variable <- core %>%
   mutate(Year = str_split_fixed(Measure, "_", 2)[,2],
          Measure = str_split_fixed(Measure, "_", 2)[,1]) %>%
   pivot_wider(id_cols = c("ID", "Year"), names_from = "Measure", values_from = "Value") %>%
-  mutate(Height = (Feet*12) + Inches)
+  mutate(Height = (Feet*12) + Inches,
+         Year = as.numeric(Year)) %>%
+  group_by(ID) %>%
+  mutate(count.w=sum(is.na(Weight)),
+         count.h=sum(is.na(Height))) %>%
+  filter(count.w<19,
+         count.h<19)
 
-         
 #Calculates missing weights and heights and BMI         
-variable <- variable  %>%
-  filter(Year < 2012) %>% #Limits data to 2011 due to survey changing to every two
+variable2 <- variable  %>%
   group_by(ID) %>%
   mutate(Weight = replace(Weight, Weight <= 30, NA),
          Weight = replace(Weight, Weight == 999, NA), #Removes weights less than 30 pounds which are clear errors and equal to 999
-         count=sum(is.na(Weight)),
+         
          zw = scale(Weight),
+         zh = scale(Height),
          Weight = replace(Weight, zw < -2.5, NA),
          Weight = replace(Weight, zw > 2.5, NA),
-         zh = scale(Height),
          Height = replace(Height, zh < -2.5, NA),
          Height = replace(Height, zh > 2.5, NA)) %>%
   arrange(ID, Year) %>%
-  mutate(Weight2 = na.approx(Weight, maxgap = 13, rule = 2),
-         Height2 = na.approx(Height, maxgap = 13, rule = 2),
+  mutate(Weight2 = na.approx(Weight, maxgap = 19, rule = 2),
+         Height2 = na.approx(Height, maxgap = 19, rule = 2),
+         Height3 = max(Height, na.rm=TRUE),
          Height = conv_unit(Height, "inch", "m"),
          Weight = conv_unit(Weight, "lbs", "kg"),
          BMI = Weight/((Height)^2),
@@ -107,12 +112,17 @@ variable <- variable  %>%
                                  BMI2>= 18.5 & BMI2 < 25 ~ "Normal",
                                  BMI2>= 25 & BMI2 < 30 ~ "Overweight",
                                  BMI2 >= 30 ~ "Obese")) %>%
-  select(-c(zw,zh,Feet,Inches, count))
+  select(-c(zw,zh,Feet,Inches, count.w, count.h))
+
 
 core <- fixed %>%
   full_join(., variable, by="ID") %>%
   mutate(Age = as.numeric(Year) - Bday.Y) %>%
-  select(-Bday.Y)
+  select(-Bday.Y) %>%
+  arrange(ID, Year) %>%
+  group_by(ID) %>%
+  mutate(BMI_Level_L = lag(BMI_Level),
+         Year = as.numeric(Year))
 
-
-
+#Save File
+save(core,file="./Build/Output/core97FD.RData")

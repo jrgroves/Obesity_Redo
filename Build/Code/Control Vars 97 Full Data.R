@@ -2,7 +2,9 @@
 #By Jeremy Groves
 #January 26, 2021
 
-#UPDATE April 3, 2023: Added code to fill in data from missing survey years. Used previous year information
+#UPDATE April 3, 2023: Modified code to keep all data from survey years. 
+#                      Added code to fill in data from missing survey years used previous year information and also a second version
+#                      interpolating the missing data.
 
 rm(list=ls())
 

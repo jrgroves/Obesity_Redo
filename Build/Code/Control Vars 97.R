@@ -13,10 +13,7 @@ core <- new_data %>%
   rename(ID=PUBID_1997) 
 names(core)<-gsub("CV_","",names(core))
 
-
-
 #Health Data
-
 core.h<-core %>%
     select(ID, starts_with("YHEA-100") & !contains("1005") & !contains("1006")) %>%
       pivot_longer(!ID, names_to = "Year", values_to = "Health.raw") %>%
@@ -26,9 +23,7 @@ core.h<-core %>%
                               Health.raw == 3 ~ "Average",
                               Health.raw > 3 ~ "Poor"))
 
-
 #Census Regions and Locality
-
 core.cr<- core %>%   #Census Region
     select(ID,starts_with("CENSUS_REGION")) %>%
       pivot_longer(!ID, names_to="Year",values_to = "Region") %>%
@@ -106,13 +101,15 @@ core.othinc<- core %>%    #Log of Gross Family Income
       core.othinc$GFinc[which(core.othinc$GFinc<0)]<-0
       core.othinc$GFinc<-log(core.othinc$GFinc + sqrt(((core.othinc$GFinc)^2)+1))
                    
-
-
 #Combine data into core of control variables
 core.cont<-Reduce(function(x,y) merge(x=x, y=y, by=c("ID","Year")),
                   list(core.c6, core.cr, core.ed, core.h,
                        core.hhs, core.wage, core.othinc, core.ur,
                        core.mar))
+
+core.cont <- core.cont %>%
+  mutate(Year = as.numeric(Year)) %>%
+  select(-Wage) #Has no data for most cells
 core.cont$Year <- as.numeric(core.cont$Year)
 
 #Pull Out the Cong. Score#

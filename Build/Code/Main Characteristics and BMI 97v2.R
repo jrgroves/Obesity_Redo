@@ -1,13 +1,12 @@
 #Creates the Characteristic files for the NLSY97 data
 #By Jeremy Groves
 #December 23, 2022 [Reversion of the Main Characteristics and BMI 97.R file which was unclear, must use 
-                   #Github reversion to pre-Dec29 for old code.]
-#April 3, 2023: Removed 2011 data restriction and filled in missing values.
-
+                  #Github reversion to pre-Dec29 for old code.]
 
 rm(list=ls())
 
 library(tidyverse)
+#library(foreign)
 library(zoo) #Contains the Interpolation command
 library(measurements)
 
@@ -75,30 +74,28 @@ variable <- core %>%
          Measure = str_split_fixed(Measure, "_", 2)[,1]) %>%
   pivot_wider(id_cols = c("ID", "Year"), names_from = "Measure", values_from = "Value") %>%
   mutate(Height = (Feet*12) + Inches,
-         Year = as.numeric(Year)) %>%
-  group_by(ID) %>%
-  mutate(count.w=sum(is.na(Weight)),
-         count.h=sum(is.na(Height))) %>%
-  filter(count.w<19,
-         count.h<19)
+         Year = as.numeric(Year),
+         missing = sum(is.na(Weight)), .by=ID) %>%
+  filter(missing < 17)
 
 
 #Calculates missing weights and heights and BMI         
 variable <- variable  %>%
+  filter(Year < 2012) %>% #Limits data to 2011 due to survey changing to every two
   group_by(ID) %>%
   mutate(Weight = replace(Weight, Weight <= 30, NA),
          Weight = replace(Weight, Weight == 999, NA), #Removes weights less than 30 pounds which are clear errors and equal to 999
+         count=sum(is.na(Weight)),
          zw = scale(Weight),
-         zh = scale(Height),
          Weight = replace(Weight, zw < -2.5, NA),
          Weight = replace(Weight, zw > 2.5, NA),
+         zh = scale(Height),
          Height = replace(Height, zh < -2.5, NA),
          Height = replace(Height, zh > 2.5, NA)) %>%
   arrange(ID, Year) %>%
-  mutate(Weight2 = na.approx(Weight, maxgap = 19, rule = 2),
-         Height2 = na.approx(Height, maxgap = 19, rule = 2),
-         Height3 = max(Height, na.rm=TRUE),
-         Height.r = conv_unit(Height, "inch", "m"), #the .r suffix indicates raw data and not interpolated
+  mutate(Weight2 = na.approx(Weight, maxgap = 14, rule = 2),
+         Height2 = max(Height, na.rm=TRUE),
+         Height.r = conv_unit(Height, "inch", "m"),
          Weight.r = conv_unit(Weight, "lbs", "kg"),
          BMI.r = Weight.r/((Height.r)^2),
          BMI_Level.r = case_when(
@@ -106,7 +103,7 @@ variable <- variable  %>%
            BMI.r>= 18.5 & BMI.r < 25 ~ "Normal",
            BMI.r>= 25 & BMI.r < 30 ~ "Overweight",
            BMI.r >= 30 ~ "Obese"),
-         Height = conv_unit(Height3, "inch", "m"),
+         Height = conv_unit(Height2, "inch", "m"),
          Weight = conv_unit(Weight2, "lbs", "kg"),
          BMI = Weight/((Height)^2),
          BMI_Level = case_when(
@@ -114,7 +111,7 @@ variable <- variable  %>%
            BMI>= 18.5 & BMI < 25 ~ "Normal",
            BMI>= 25 & BMI < 30 ~ "Overweight",
            BMI >= 30 ~ "Obese")) %>%
-  select(-c(zw,zh,Feet,Inches, count.w, count.h))
+  select(-c(zw,zh,Feet,Inches, count))
 
 core <- fixed %>%
   full_join(., variable, by="ID") %>%
@@ -126,5 +123,5 @@ core <- fixed %>%
          Year = as.numeric(Year))
 
 #Save File
-    save(core,file="./Build/Output/core97FD.RData")
+    save(core,file="./Build/Output/core97.RData")
       
