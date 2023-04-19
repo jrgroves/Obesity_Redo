@@ -107,7 +107,7 @@ variable <- variable  %>%
            BMI.r>= 18.5 & BMI.r < 25 ~ "Normal",
            BMI.r>= 25 & BMI.r < 30 ~ "Overweight",
            BMI.r >= 30 ~ "Obese"),
-         Height = conv_unit(Height2, "inch", "m"), #switched to Max
+         Height = conv_unit(Height3, "inch", "m"), #switched to Max
          Weight = conv_unit(Weight2, "lbs", "kg"),
          BMI = Weight/((Height)^2),
          BMI_Level = case_when(

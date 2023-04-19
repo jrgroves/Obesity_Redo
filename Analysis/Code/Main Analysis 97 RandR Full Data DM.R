@@ -47,8 +47,9 @@ load("./Build/Input/mismatch.RData")
 Year<-as.data.frame(seq(1997,2020,1))
 names(Year) <- "Year"
 
-gaps2<-gaps %>%
-  mutate(Year = case_when(Year==2012 ~ 2011,
+gaps<-gaps %>%
+  mutate(Year2 = Year,
+         Year = case_when(Year==2012 ~ 2011,
                           Year==2014 ~ 2013,
                           Year==2016 ~ 2015,
                           Year==2018 ~ 2017,

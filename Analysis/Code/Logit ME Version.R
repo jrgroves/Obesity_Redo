@@ -74,9 +74,9 @@ main <- core %>%
          Expa = Exp,
          Tena = Ten,
          Exp = Tena,
-         Ten = Expa,
-         Plan = factor(Plan),
-         Plan = relevel(Plan, ref="4")) %>%
+         Ten = Expa) %>%
+         #Plan = factor(Plan),
+         #Plan = relevel(Plan, ref="4")) %>%
   select(!Tena, !Expa)
 
 
@@ -98,10 +98,13 @@ main <- main %>%
          !is.na(URATE))
 
 main<-main %>%
-  select(-Year.x, -Health.raw, -Weight.r, -URBAN, -Height.r, -Year.y) %>%
+  select(-Year.x, -Health.raw, -Weight.r, -URBAN, -Height.r,-count.x) %>%
   filter(((Age-16)*52) > Ten) %>%
   mutate(Ovr21 = case_when(Age <= 21 ~ 0,
-                           Age > 21 ~ 1))
+                           Age > 21 ~ 1),
+         count = count.y)
+
+
 
 
 rm(core, core.cont, core.s, gaps, unemp)
@@ -134,18 +137,18 @@ meout<-function(a,b,c,d){
 
 mod1<-glmer(ended ~ BMI_Level + count + (1|ID), data=main, family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
 
-mod2<-glmer(ended ~ BMI_Level + Gender + Race + Marriage + Education + Plan + Ovr21 +
+mod2<-glmer(ended ~ BMI_Level + Gender + Race + Marriage + Education + Ovr21 +
                   Age + Child6 + GFinc + HH_Size + Score + Ten + Exp +
                   Health + Region + count+ (1|ID), data=main, family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
 
 #Addition of Industry, Occupation, and Economy
 
-mod3<-glmer(ended ~ BMI_Level + Gender + Race + Marriage + Education + Plan + Ovr21 +
+mod3<-glmer(ended ~ BMI_Level + Gender + Race + Marriage + Education + Ovr21 +
                   Age + Child6 + GFinc + HH_Size + Score + Ten + Exp + 
                   Health + Region + URATE + SearchCT + Term + count+ (1|ID), data=main, family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
              
 
-mod4<-glmer(ended ~ BMI_Level + Gender + Race + Marriage + Education + Plan + Ovr21 +
+mod4<-glmer(ended ~ BMI_Level + Gender + Race + Marriage + Education + Ovr21 +
                   Age + Child6 + GFinc + HH_Size + Score + Ten + Exp +
                   Health + Region + URATE + SearchCT + Term + Union + 
                   OCC2 + IND2 + count+ (1|ID), data=main, family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
@@ -163,12 +166,12 @@ black<-main %>%
          count = droplevels(count))
 
 
-mod3B<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod3B<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Ovr21 + Child6 + 
                   GFinc + HH_Size + Score + Ten + Exp + Health + Region +
                   URATE + SearchCT + Term + count + (1|ID), data=black, 
            family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
 
-mod4B<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod4B<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Ovr21 + Child6 + 
             GFinc + HH_Size + Score + Ten + Exp + Health + Region +
             URATE + SearchCT + Term + Union + OCC2 + IND2 + count + (1|ID), data=black,
            family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
@@ -179,12 +182,12 @@ black<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3BF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod3BF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count + (1|ID), data=black, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
 
-mod4BF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod4BF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count + (1|ID), data=black, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
@@ -195,12 +198,12 @@ black<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3BM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod3BM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count + (1|ID), data=black, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
 
-mod4BM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod4BM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count + (1|ID), data=black, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
@@ -213,12 +216,12 @@ white<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3W<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod3W<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count + (1|ID), data=white, 
            family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
 
-mod4W<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod4W<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count + (1|ID), data=white, 
            family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
@@ -229,12 +232,12 @@ white<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3WF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod3WF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count + (1|ID), data=white, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
 
-mod4WF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod4WF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count + (1|ID), data=white, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
@@ -245,12 +248,12 @@ white<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3WM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod3WM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count + (1|ID), data=white, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
 
-mod4WM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod4WM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count + (1|ID), data=white, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ = 0)
@@ -263,12 +266,12 @@ hispan<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3H<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod3H<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count + (1|ID), data=hispan, 
            family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
 
-mod4H<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod4H<-glmer(ended ~ BMI_Level + Gender + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count + (1|ID), data=hispan, 
            family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
@@ -279,12 +282,12 @@ hispan<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3HF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod3HF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count + (1|ID), data=hispan, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
 
-mod4HF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod4HF<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count + (1|ID), data=hispan, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
@@ -295,12 +298,12 @@ hispan<-main %>%
          IND2 = droplevels(IND2),
          count = droplevels(count))
 
-mod3HM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod3HM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + count + (1|ID), data=hispan, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)
 
-mod4HM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Plan + Ovr21 + Child6 + 
+mod4HM<-glmer(ended ~ BMI_Level + Marriage + Education + Age + Ovr21 + Child6 + 
              GFinc + HH_Size + Score + Ten + Exp + Health + Region +
              URATE + SearchCT + Term + Union + OCC2 + IND2 + count + (1|ID), data=hispan, 
             family = binomial, control = glmerControl(optimizer="bobyqa"), nAGQ=0)

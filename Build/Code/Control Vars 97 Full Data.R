@@ -61,8 +61,8 @@ core.ed<-core %>%   #Current Enrollment
           mutate(Education = case_when(
             Education == 1 | Education == 8 ~ "LessHS",
             Education == 2 | Education == 3 ~ "HS",
-            Education == 4 | Education == 9 | Education  == 10 ~ "SomeCol",
-            Education == 5 | Education == 6 ~ "CollegeGrad",
+            Education == 4 | Education == 9 | Education  == 10 | Education == 5 ~ "SomeCol",
+            Education == 6 ~ "CollegeGrad",
             Education == 7 | Education == 11 ~ "CollegePlus"))
 
 #Household Makeup

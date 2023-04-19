@@ -121,10 +121,8 @@ main<-main %>%
          !grepl('2016', Spell.Start),
          !grepl('2018', Spell.Start),
          !grepl('2020', Spell.Start),
-         !grepl('2022', Spell.Start)) %>% #maybe remove everything after 
- full_join(., mis, by=c("ID", "Year")) %>%
- filter(is.na(drop))
-
+         !grepl('2022', Spell.Start)) #maybe remove everything after 
+  
 
 rm(core, core.cont, core.s, gaps)
 
