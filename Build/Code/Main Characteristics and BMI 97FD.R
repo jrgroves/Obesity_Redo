@@ -95,8 +95,9 @@ variable <- variable  %>%
          Height = replace(Height, zh < -2.5, NA),
          Height = replace(Height, zh > 2.5, NA)) %>%
   arrange(ID, Year) %>%
-  mutate(Weight2 = na.approx(Weight, maxgap = 19, rule = 2),
-         Height2 = na.approx(Height, maxgap = 19, rule = 2),
+  complete(Year=full_seq(Year, 1))  %>%
+  mutate(Weight2 = na.approx(Weight, maxgap = 22, rule = 2),
+         Height2 = na.approx(Height, maxgap = 22, rule = 2),
          Height3 = max(Height, na.rm=TRUE),
          Height.r = conv_unit(Height, "inch", "m"), #the .r suffix indicates raw data and not interpolated
          Weight.r = conv_unit(Weight, "lbs", "kg"),
@@ -126,5 +127,5 @@ core <- fixed %>%
          Year = as.numeric(Year))
 
 #Save File
-    save(core,file="./Build/Output/core97FD.RData")
+    save(core,file="./Build/Output/core97FD2.RData")
       

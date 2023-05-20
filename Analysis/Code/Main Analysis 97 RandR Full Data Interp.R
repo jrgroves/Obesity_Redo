@@ -1,6 +1,10 @@
 #This is a supplement to the Main Analysis 97.R
 #We address questions raised by the reviewer in R and R
 
+#April 3, 2023: This is a full data run with all survey years. Spells which start in even years after 2011 are 
+#               removed for missing weight and height data in this version of the analysis.
+#THIS VERSION duplicates the controls for missing even number year
+
 rm(list=ls())
 
 library(tidyverse)
@@ -13,12 +17,35 @@ library(coxme)
 
 library(broom)
 
-#Load constructed data and create core analysis data
+#Function to output results from both coxph and coxme ####
+
+summe<-function(d, c, b, a){
+  
+  temp <- as_tibble(tidy(d)[,c(1:3, 5)])
+  temp2 <- tidy(c)[,c(1:3, 5)]
+  temp3 <- as_tibble(tidy(b)[,c(1:3, 5)])
+  temp4 <- tidy(a)[,c(1:3, 5)]
+  
+  out<-left_join(temp, temp2, by= "term") %>%
+    left_join(., temp3, by= "term") %>%
+    left_join(., temp4, by= "term")
+  
+  return(out)
+}
+
+
+#Load constructed data and create core analysis data####
+
 load("./Build/Output/gaps97.RData")
-load("./Build/Output/core97.RData")
-load("./Build/Output/Controls97.RData")
+load("./Build/Output/core97FD2.RData")
+load("./Build/Output/Controls97FD_i.RData")
 load("./Build/Output/Score.RData")
 load("./Build/Input/unemp.RData")
+
+#load("./Build/Input/mismatch.RData")
+
+Year<-as.data.frame(seq(1997,2020,1))
+names(Year) <- "Year"
 
 main <- core %>%
   inner_join(., gaps, by=c("ID", "Year")) %>%
@@ -33,7 +60,6 @@ main <- core %>%
          Race = relevel(Race, ref="White")) %>%
   inner_join(., core.s, by="ID") %>%
   inner_join(., core.cont, by=c("ID", "Year")) %>%
- 
   left_join(., unemp, by=c("Spell.Start", "Region")) %>%
   mutate(Reason = replace(Reason, is.na(Reason), "Unknown"),
          Region = factor(Region),
@@ -64,9 +90,7 @@ main <- core %>%
          Ten = Expa,
          Plan = factor(Plan),
          Plan = relevel(Plan, ref="4")) %>%
-  select(!Tena, !Expa)
-
-
+  select(!Tena, !Expa) 
 
 #Remove NAs and subset data
 main <- main %>%
@@ -84,20 +108,22 @@ main <- main %>%
          !is.na(Marriage),
          !is.na(Child6),
          !is.na(URATE),
-         !is.na(Plan),
+         #!is.na(Plan), Plan is not in the post 2011 data
          length > 0)
 
 main<-main %>%
-  select(-Year.x, -Health.raw, -Weight.r, -URBAN, -Height.r, -Year.y) %>%
-  filter(((Age-16)*52) > Exp) %>%
+  select(-Year.x, -Health.raw, -Weight.r, -URBAN, -Height.r, -Tena, -Expa) %>%
+  #filter(((Age-16)*52) > Exp) %>%
   filter(Ten <= Exp) %>%
   mutate(Ovr21 = case_when(Age <= 21 ~ 0,
-                           Age > 21 ~ 1))
-
+                           Age > 21 ~ 1),
+         OCC2 = droplevels(OCC2),
+         IND2 = droplevels(IND2)) %>%
+  rename(Year = Year.y) 
 
 rm(core, core.cont, core.s, gaps)
 
-#Summary Statistics for Paper
+#Summary Statistics for Paper####
 
 a<-as.data.frame(model.matrix(~Gender - 1, data=main))
 b<-as.data.frame(model.matrix(~BMI_Level - 1, data=main))
@@ -107,15 +133,15 @@ e<-as.data.frame(model.matrix(~Marriage - 1, data=main))
 f<-as.data.frame(model.matrix(~Health - 1, data=main))
 g<-as.data.frame(model.matrix(~Education - 1, data=main))
 h<-as.data.frame(model.matrix(~Term - 1, data=main))
-i<-as.data.frame(model.matrix(~Plan - 1, data=main))
+#i<-as.data.frame(model.matrix(~Plan - 1, data=main))
 
 sumfac<-main %>%
   select(ID,length, BMI, Age, Ovr21, Child6, HH_Size, GFinc, URATE,
          Score,SearchCT, Ten, Exp, Union)
-sumfac<-as.data.frame(cbind(sumfac,a,b,c,d,e,f,g,h,i))
+sumfac<-as.data.frame(cbind(sumfac,a,b,c,d,e,f,g,h))
 
 
-rm(a,b,c,d,e,f,g,h,i)
+rm(a,b,c,d,e,f,g,h)
 
 stargazer(sumfac, subset(sumfac, GenderFemale==1), subset(sumfac, GenderMale==1),
           type="text", out="./Analysis/Output/full.txt")
@@ -134,24 +160,7 @@ temp <- main %>%
   filter(BMI_Level=="Obese") %>%
   distinct(ID)
 
-
-#Function to output results from both coxph and coxme
-
-summe<-function(d, c, b, a){
-  
-  temp <- as_tibble(tidy(d)[,c(1:3, 5)])
-  temp2 <- tidy(c)[,c(1:3, 5)]
-  temp3 <- as_tibble(tidy(b)[,c(1:3, 5)])
-  temp4 <- tidy(a)[,c(1:3, 5)]
-  
-  out<-left_join(temp, temp2, by= "term") %>%
-    left_join(., temp3, by= "term") %>%
-    left_join(., temp4, by= "term")
-  
-  return(out)
-}
-
-#K-M Nonparameter Curve Graphs
+#K-M Nonparameter Curve Graphs####
 
 fit <- survfit(Surv(length, event) ~ BMI_Level, data = main)
 ggsurvplot(fit, 
@@ -208,7 +217,9 @@ fit.H <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="His
 fit.HF <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="Hispanic" & Gender=="Female"))
 fit.HM <- survfit(Surv(length, event) ~ BMI_Level, data = subset(main, Race=="Hispanic" & Gender=="Male"))
 
-#Limit sample to only those over the age of 21 at the start of the spell
+
+
+#Main Model Estimations of Full Sample, Lags, and Gender Split with Interactions####
 
 mod1<-coxph(Surv(length, event)~BMI_Level, data=main)
 mod1L<-coxph(Surv(length, event)~BMI_Level_L, data=subset(main, !is.na(BMI_Level_L)))
@@ -249,7 +260,7 @@ mod3.fr.int<-coxme(Surv(length, event)~BMI_Level+Gender+Race+BMI_Level*Race+Marr
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
               Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-              URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
+              URATE+SearchCT+Term+Union+OCC2+IND2,
             data=main)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr21+
@@ -282,11 +293,16 @@ mod4L.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Race+Marriage+Education+Ovr
                  URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
                data=submain)
 
-#Female Subsample
+#Female Sub sample
 submain<-main %>%
   filter(Gender=="Female") %>%
   mutate(OCC2 = droplevels(OCC2),
          IND2 = droplevels(IND2))
+
+mod3F.fr.int<-coxme(Surv(length, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+Ovr21+
+                     Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                     URATE+SearchCT+Term+(1|ID),
+                   data=submain)
 
 mod4F.fr<-coxme(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
                  Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
@@ -303,6 +319,11 @@ submain<-main %>%
   mutate(OCC2 = droplevels(OCC2),
          IND2 = droplevels(IND2))
 
+mod3M.fr.int<-coxme(Surv(length, event)~BMI_Level+Race+BMI_Level*Race+Marriage+Education+Ovr21+
+                     Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                     URATE+SearchCT+Term+(1|ID),
+                   data=submain)
+
 mod4M.fr<-coxme(Surv(length, event)~BMI_Level+Race+Marriage+Education+Ovr21+
                   Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
                   URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
@@ -313,10 +334,12 @@ mod4M.fr.int<-coxme(Surv(length, event)~BMI_Level+Race+BMI_Level*Race+Marriage+E
                       URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), data=submain)
 
 out1<-summe(mod4.fr.int, mod4.fr, mod3.fr.int, mod3.fr)
-out2 <-summe(mod4F.fr.int, mod4M.fr.int, mod4F.fr, mod4M.fr)
+out2<-summe(mod4F.fr.int, mod4M.fr.int, mod4F.fr, mod4M.fr)
 
 base <- save(mod4.fr.int, mod4.fr, mod3.fr.int, mod3.fr, mod4F.fr, mod4F.fr.int, mod4M.fr, mod4M.fr.int,
              file="./Analysis/Output/BaseRR.RData")
+
+#Model Estimation with Racial and Gender Sub-samples#####
 
 black<-main %>%
   subset(Race == "Black") %>%
@@ -336,7 +359,7 @@ mod3.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
               Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-              URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
+              URATE+SearchCT+Term+Union+OCC2+IND2,
             data=black)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
@@ -364,7 +387,7 @@ mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
+               URATE+SearchCT+Term+Union+OCC2+IND2,
              data=black)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
@@ -393,11 +416,11 @@ mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
+               URATE+SearchCT+Term+Union+OCC2+IND2,
              data=black)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
-                  Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
+                  Age+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
                   URATE+SearchCT+Term+Union+OCC2+IND2+(1|ID), 
                 data=black)
 
@@ -423,7 +446,7 @@ mod3.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
+               URATE+SearchCT+Term+Union+OCC2+IND2,
              data=white)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
@@ -452,7 +475,7 @@ mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
+               URATE+SearchCT+Term+Union+OCC2+IND2,
              data=white)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
@@ -481,7 +504,7 @@ mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                 Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-                URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
+                URATE+SearchCT+Term+Union+OCC2+IND2,
               data=white)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
@@ -510,7 +533,7 @@ mod3.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
+               URATE+SearchCT+Term+Union+OCC2+IND2,
              data=hispan)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Gender+Marriage+Education+
@@ -538,7 +561,7 @@ mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
+               URATE+SearchCT+Term+Union+OCC2+IND2,
              data=hispan)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
@@ -566,7 +589,7 @@ mod3.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
 
 mod4<-coxph(Surv(length, event)~BMI_Level+Marriage+Education+
                Age+Ovr21+Child6+GFinc+HH_Size+Score+Ten+Exp+Health+Region+
-               URATE+SearchCT+Term+Union+OCC2+IND2+Plan,
+               URATE+SearchCT+Term+Union+OCC2+IND2,
              data=hispan)
 
 mod4.fr<-coxme(Surv(length, event)~BMI_Level+Marriage+Education+
@@ -579,6 +602,7 @@ save.image(file="./Analysis/Output/MainAnalysis.RData")
 
 outHM<-summe(mod4.fr, mod4, mod3.fr, mod3)
 
+#Writing of csv files for input into Excel for Tables####
 
 write.csv(out1, file="./Analysis/Output/base.csv") #Full Sample
 write.csv(out2, file="./Analysis/Output/base2.csv") #Sample by Gender
