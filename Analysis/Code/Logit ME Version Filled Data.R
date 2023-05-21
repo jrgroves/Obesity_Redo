@@ -23,20 +23,13 @@ load("./Build/Output/gaps97.RData")
              ended = case_when(count == max(rowid(ID, Spell.Num)) ~ 1,
                                TRUE ~ 0),
              count = factor(as.character(count)),
-             count = relevel(count, ref="1"),
-             Year2 = Year,
-             Year = case_when(Year==2012 ~ 2011,
-                              Year==2014 ~ 2013,
-                              Year==2016 ~ 2015,
-                              Year==2018 ~ 2017,
-                              Year==2020 ~ 2019,
-                              TRUE ~ Year)) %>%
+             count = relevel(count, ref="1")) %>%
              #failyr = factor(max(count)),
              #failyr = relevel(failyr, ref="1")) %>%
       arrange(ID, Spell.Num)
 
-load("./Build/Output/core97FD.RData")
-load("./Build/Output/Controls97.RData")
+    load("./Build/Output/core97FD2.RData")
+    load("./Build/Output/Controls97FD_i.RData")
 load("./Build/Output/Score.RData")
 load("./Build/Input/unemp.RData")
 

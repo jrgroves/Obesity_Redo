@@ -3,7 +3,7 @@
 
 #April 3, 2023: This is a full data run with all survey years. Spells which start in even years after 2011 are 
 #               removed for missing weight and height data in this version of the analysis.
-#THIS VERSION duplicates the controls for missing even number year
+#THIS VERSION uses interpolated weights and characteristics for missing data.
 
 rm(list=ls())
 
@@ -14,7 +14,7 @@ library(vtable)
 library(stargazer)
 library(survminer)
 library(coxme)
-
+library(ehahelper)
 library(broom)
 
 #Function to output results from both coxph and coxme ####
@@ -22,9 +22,9 @@ library(broom)
 summe<-function(d, c, b, a){
   
   temp <- as_tibble(tidy(d)[,c(1:3, 5)])
-  temp2 <- tidy(c)[,c(1:3, 5)]
+  temp2 <- as_tibble(tidy(c)[,c(1:3, 5)])
   temp3 <- as_tibble(tidy(b)[,c(1:3, 5)])
-  temp4 <- tidy(a)[,c(1:3, 5)]
+  temp4 <- as_tibble(tidy(a)[,c(1:3, 5)])
   
   out<-left_join(temp, temp2, by= "term") %>%
     left_join(., temp3, by= "term") %>%
