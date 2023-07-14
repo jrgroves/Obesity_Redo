@@ -113,7 +113,7 @@ main <- main %>%
 
 main<-main %>%
   select(-Year.x, -Health.raw, -Weight.r, -URBAN, -Height.r, -Tena, -Expa) %>%
-  #filter(((Age-16)*52) > Exp) %>%
+  #filter(((Age-16)*52) > Exp) %>%  #This removes first jobs
   filter(Ten <= Exp) %>%
   mutate(Ovr21 = case_when(Age <= 21 ~ 0,
                            Age > 21 ~ 1),
